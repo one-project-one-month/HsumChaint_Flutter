@@ -10,6 +10,13 @@ abstract final class AppRoutes {
   static const String changePasswordName = 'change_password';
   static const String resetPasswordName = 'reset_password';
 
+  //Home
+  static const String createSpaceName = 'create_space';
+  static const String editSpaceName = 'edit_space';
+  static const String notificationName = 'notification';
+  static const String spaceScreenName = 'space';
+  static const String spaceInfoScreenName = 'space_info';
+
   static const String splashPath = '/splash';
   static const String welcomePath = '/welcome';
   static const String homePath = '/';
@@ -20,6 +27,13 @@ abstract final class AppRoutes {
   static const String forgotPasswordPath = '/forgot_password';
   static const String changePasswordPath = '/change_password';
   static const String resetPasswordPath = '/reset_password';
+
+  //Home
+  static const String createSpacePath = '/create_space';
+  static const String editSpacePath = '/edit_space';
+  static const String notificationPath = '/notification';
+  static const String spaceScreenPath = '/space';
+  static const String spaceInfoScreenPath = '/space_info';
 
   static const Set<String> _authLocations = <String>{
     loginPath,
