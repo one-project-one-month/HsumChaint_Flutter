@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hsum_chaint/presentation/widgets/primary_button.dart';
 import 'package:hsum_chaint/utils/extensions/extensions.dart';
-import 'package:hsum_chaint/utils/extensions/num_extensions.dart';
 
 class SpaceInfoScreen extends StatelessWidget {
   const SpaceInfoScreen({super.key});
 
-  static const _bgColor = Color(0xFFF6F2EC);
   static const _titleColor = Color(0xFF1E1A17);
   static const _sectionColor = Color(0xFF7A541D);
 
