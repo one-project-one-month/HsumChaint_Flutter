@@ -111,6 +111,7 @@ class ApiService extends GetxService {
   Future<Response?> post(String path, {dynamic data}) async {
     try {
       final response = await _dio.post(path, data: data);
+
       return response;
     } catch (e) {
       return null;

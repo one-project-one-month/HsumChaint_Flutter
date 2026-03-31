@@ -176,6 +176,11 @@ class LoginScreen extends GetView<AuthController> {
                   }
 
                   controller.login();
+                  controller.isLoginSuccessful.listen((isSuccess) {
+                    if (isSuccess) {
+                      context.go(AppRoutes.homePath);
+                    }
+                  });
                 },
               ).fadeIn(delay: 560.ms, duration: 700.ms),
             ),

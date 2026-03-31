@@ -85,7 +85,11 @@ class DialogHelper {
               onConfirm();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: confirmTextColor ?? Get.theme.primaryColor,
+              backgroundColor:
+                  confirmTextColor ??
+                  (Get.context != null
+                      ? Theme.of(Get.context!).primaryColor
+                      : Colors.blue),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -100,39 +104,56 @@ class DialogHelper {
     );
   }
 
-  /// Show success snackbar
-  static void showSuccessSnackbar({
+  static void _showSnackbar({
     required String title,
     required String message,
+    required Color backgroundColor,
+    required Icon icon,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
-      icon: const Icon(Icons.check_circle, color: Colors.white),
-      duration: const Duration(seconds: 3),
-    );
+    try {
+      Get.closeCurrentSnackbar();
+    } catch (_) {
+      // Ignore if snackbar controller is not yet initialized.
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.context == null) return;
+
+      Get.snackbar(
+        title,
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: backgroundColor,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+        icon: icon,
+        duration: const Duration(seconds: 3),
+      );
+    });
   }
 
-  /// Show error snackbar
   static void showErrorSnackbar({
     required String title,
     required String message,
   }) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.BOTTOM,
+    _showSnackbar(
+      title: title,
+      message: message,
       backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
       icon: const Icon(Icons.error, color: Colors.white),
-      duration: const Duration(seconds: 3),
+    );
+  }
+
+  static void showSuccessSnackbar({
+    required String title,
+    required String message,
+  }) {
+    _showSnackbar(
+      title: title,
+      message: message,
+      backgroundColor: Colors.green,
+      icon: const Icon(Icons.check_circle, color: Colors.white),
     );
   }
 }

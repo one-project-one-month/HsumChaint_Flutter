@@ -29,8 +29,8 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     ///TODO: Set initialLocation to splash after implementing splash screen
-    // initialLocation: AppRoutes.splashPath,
-    initialLocation: AppRoutes.spaceInfoScreenPath,
+    //initialLocation: AppRoutes.splashPath,
+    initialLocation: AppRoutes.spaceScreenPath,
     refreshListenable: _refreshNotifier,
     // redirect: _redirect,
     routes: <RouteBase>[

@@ -26,6 +26,7 @@ class AuthController extends GetxController {
   // final signupFormKey = GlobalKey<FormState>();
 
   final isPasswordVisible = false.obs;
+  final isLoginSuccessful = false.obs;
 
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;
@@ -70,7 +71,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> login() async {
-    if (Get.isSnackbarOpen) Get.back();
+    //  if (Get.isSnackbarOpen) Get.back();
     final phone = phoneController.text.trim();
     final password = passwordController.text;
 
@@ -98,10 +99,12 @@ class AuthController extends GetxController {
     } else if (user != null) {
       _apiService.setAuthToken(user.token);
       currentUser.value = user;
+
       DialogHelper.showSuccessSnackbar(
         title: 'Success',
         message: 'Welcome back, ${user.name}!',
       );
+      isLoginSuccessful.value = true;
       clearControllers();
       // GoRouter redirects authenticated users away from auth routes.
     }

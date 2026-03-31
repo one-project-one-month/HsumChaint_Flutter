@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
+import 'package:hsum_chaint/data/models/user_model.dart';
 import '../services/api_service.dart';
 
 class AuthProvider {
@@ -8,10 +9,25 @@ class AuthProvider {
 
   /// Login Provider Method
   Future<Response?> login(String phone, String password) async {
-    return await _apiService.post(
-      '/auth/login',
-      data: {'phone': phone, 'password': password},
+    final response = await fakeLoginResponse(phone, password);
+
+    if (response['success'] == true) {
+      return Response(
+        requestOptions: RequestOptions(path: '/auth/login'),
+        data: response['data'],
+        statusCode: 200,
+      );
+    }
+
+    return Response(
+      requestOptions: RequestOptions(path: '/auth/login'),
+      data: {'message': response['message']},
+      statusCode: 401,
     );
+    // return await _apiService.post(
+    //   '/auth/login',
+    //   data: {'phone': phone, 'password': password},
+    // );
   }
 
   /// Signup Provider Method
@@ -22,13 +38,16 @@ class AuthProvider {
     String? email,
     String? contactPhone,
   }) async {
-    return await _apiService.post('/auth/signup/user', data: {
-      'phone': phone,
-      'username': username,
-      'password': password,
-      if (email?.isNotEmpty ?? false) 'email': email,
-      if (contactPhone?.isNotEmpty ?? false) 'contact_phone': contactPhone,
-    });
+    return await _apiService.post(
+      '/auth/signup/user',
+      data: {
+        'phone': phone,
+        'username': username,
+        'password': password,
+        if (email?.isNotEmpty ?? false) 'email': email,
+        if (contactPhone?.isNotEmpty ?? false) 'contact_phone': contactPhone,
+      },
+    );
   }
 
   Future<Response?> signupMonk({
@@ -39,14 +58,17 @@ class AuthProvider {
     required String monasteryAddress,
     String? email,
   }) async {
-    return await _apiService.post('/auth/signup/monk', data: {
-      'phone': phone,
-      'username': username,
-      'password': password,
-      'monastery_name': monasteryName,
-      'monastery_address': monasteryAddress,
-      if (email?.isNotEmpty ?? false) 'email': email,
-    });
+    return await _apiService.post(
+      '/auth/signup/monk',
+      data: {
+        'phone': phone,
+        'username': username,
+        'password': password,
+        'monastery_name': monasteryName,
+        'monastery_address': monasteryAddress,
+        if (email?.isNotEmpty ?? false) 'email': email,
+      },
+    );
   }
 
   /// Get Profile Provider Method
@@ -58,10 +80,10 @@ class AuthProvider {
     required String phone,
     required String otp,
   }) async {
-    return await _apiService.post('/auth/verify-otp', data: {
-      'phone': phone,
-      'otp': otp,
-    });
+    return await _apiService.post(
+      '/auth/verify-otp',
+      data: {'phone': phone, 'otp': otp},
+    );
   }
 
   Future<Response?> resendOtp({required String phone}) async {
