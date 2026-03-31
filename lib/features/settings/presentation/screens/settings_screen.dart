@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hsum_chaint/core/navigation/app_routes.dart';
 import 'package:hsum_chaint/utils/extensions/screen_extensions.dart';
 import 'package:hsum_chaint/presentation/widgets/setting_item.dart';
 import 'package:hsum_chaint/presentation/widgets/setting_section.dart';
@@ -22,9 +24,9 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       _buildAppBar(),
                       const SizedBox(height: 32),
-                      _buildProfileHeader(),
+                       _buildProfileHeader(context),
                       const SizedBox(height: 40),
-                      _buildAccountSection(),
+                      _buildAccountSection(context),
                       _buildPreferencesSection(),
                       _buildScheduleSection(),
                       _buildLogoutButton(),
@@ -56,45 +58,51 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader() {
-    return Column(
-      children: [
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(shape: BoxShape.circle),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/uzine.png',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.person, size: 60, color: Color(0xFF7A541D)),
+  Widget _buildProfileHeader(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.profilePath),
+      child: Column(
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(shape: BoxShape.circle),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/uzine.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.person,
+                  size: 60,
+                  color: Color(0xFF7A541D),
+                ),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          'U Law Ti Ka',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1F1A17),
+          const SizedBox(height: 16),
+          const Text(
+            'U Law Ti Ka',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1F1A17),
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          '+95 9 422 675 753',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF6F6A66),
+          const SizedBox(height: 4),
+          const Text(
+            '+95 9 422 675 753',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6F6A66),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildAccountSection() {
+  Widget _buildAccountSection(BuildContext context) {
     return SettingSection(
       title: 'Account',
       children: [
@@ -102,7 +110,7 @@ class SettingsScreen extends StatelessWidget {
           icon: Icons.edit_outlined,
           iconBackgroundColor: Colors.blue,
           title: 'Edit Profile',
-          onTap: () {},
+          onTap: () => context.push(AppRoutes.profilePath),
         ),
         SettingItem(
           icon: Icons.lock_outline,
