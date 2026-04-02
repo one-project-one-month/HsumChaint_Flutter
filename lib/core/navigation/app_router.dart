@@ -14,6 +14,9 @@ import 'package:hsum_chaint/features/home/screens/space/create_space.dart';
 import 'package:hsum_chaint/features/home/screens/space/edit_space.dart';
 import 'package:hsum_chaint/features/home/screens/space/space_info_screen.dart';
 import 'package:hsum_chaint/features/home/screens/space/space_screen.dart';
+import 'package:hsum_chaint/features/settings/presentation/screens/edit_profile_screen.dart';
+import 'package:hsum_chaint/features/settings/presentation/screens/profile_screen.dart';
+import 'package:hsum_chaint/features/settings/presentation/screens/settings_screen.dart';
 import 'package:hsum_chaint/presentation/screens/splash/splash_screen.dart';
 import 'package:hsum_chaint/presentation/screens/welcome/welcome_screen.dart';
 import 'app_routes.dart';
@@ -29,8 +32,8 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     ///TODO: Set initialLocation to splash after implementing splash screen
-    initialLocation: AppRoutes.splashPath,
-    //initialLocation: AppRoutes.spaceScreenPath,
+    //initialLocation: AppRoutes.splashPath,
+    initialLocation: AppRoutes.settingsPath,
     refreshListenable: _refreshNotifier,
     redirect: _redirect,
     routes: <RouteBase>[
@@ -115,6 +118,21 @@ class AppRouter {
         path: AppRoutes.spaceInfoScreenPath,
         name: AppRoutes.spaceInfoScreenName,
         builder: (context, state) => const SpaceInfoScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.settingsPath,
+        name: AppRoutes.settingsName,
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.editProfilePath,
+        name: AppRoutes.editProfileName,
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.profilePath,
+        name: AppRoutes.profileName,
+        builder: (context, state) => const ProfileScreen(),
       ),
     ],
     errorBuilder: (context, state) => RouteErrorScreen(error: state.error),
