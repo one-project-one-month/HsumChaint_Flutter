@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hsum_chaint/core/navigation/app_routes.dart';
 import 'package:hsum_chaint/presentation/widgets/primary_button.dart';
 import 'package:hsum_chaint/utils/extensions/extensions.dart';
 
@@ -98,9 +99,7 @@ class SpaceInfoScreen extends StatelessWidget {
             PrimaryButton(
               text: 'Edit Info',
               isLoading: false,
-              onPressed: () {
-                // context.push('/edit-space');
-              },
+              onPressed: () => context.push(AppRoutes.editSpacePath),
             ),
 
             6.h,

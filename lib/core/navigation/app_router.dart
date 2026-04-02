@@ -29,10 +29,10 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     ///TODO: Set initialLocation to splash after implementing splash screen
-    //initialLocation: AppRoutes.splashPath,
-    initialLocation: AppRoutes.spaceScreenPath,
+    initialLocation: AppRoutes.splashPath,
+    //initialLocation: AppRoutes.spaceScreenPath,
     refreshListenable: _refreshNotifier,
-    // redirect: _redirect,
+    redirect: _redirect,
     routes: <RouteBase>[
       GoRoute(
         path: AppRoutes.splashPath,
@@ -121,25 +121,25 @@ class AppRouter {
   );
 
   ///TODO: Implement route guards and redirection logic based on authentication state
-  // String? _redirect(BuildContext context, GoRouterState state) {
-  //   final bool isAuthenticated = _authController.isAuthenticated;
-  //   final bool isAuthLocation = AppRoutes.isAuthLocation(state.matchedLocation);
-  //   final bool isSplashLocation = state.matchedLocation == AppRoutes.splashPath;
+  String? _redirect(BuildContext context, GoRouterState state) {
+    final bool isAuthenticated = _authController.isAuthenticated;
+    final bool isAuthLocation = AppRoutes.isAuthLocation(state.matchedLocation);
+    final bool isSplashLocation = state.matchedLocation == AppRoutes.splashPath;
 
-  //   if (isSplashLocation) {
-  //     return null;
-  //   }
+    if (isSplashLocation) {
+      return null;
+    }
 
-  //   if (!isAuthenticated && !isAuthLocation) {
-  //     return AppRoutes.welcomePath;
-  //   }
+    if (!isAuthenticated && !isAuthLocation) {
+      return AppRoutes.welcomePath;
+    }
 
-  //   if (isAuthenticated && isAuthLocation) {
-  //     return AppRoutes.homePath;
-  //   }
+    if (isAuthenticated && isAuthLocation) {
+      return AppRoutes.homePath;
+    }
 
-  //   return null;
-  // }
+    return null;
+  }
 
   void dispose() {
     _refreshNotifier.dispose();

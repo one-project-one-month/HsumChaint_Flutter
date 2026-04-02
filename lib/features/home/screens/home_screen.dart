@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hsum_chaint/core/navigation/app_routes.dart';
 import 'package:hsum_chaint/utils/extensions/screen_extensions.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -71,7 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             _buildSectionHeader(
                               title: 'Recent Notification',
-                              onSeeAll: () {},
+                              onSeeAll: () =>
+                                  context.push(AppRoutes.notificationPath),
                             ),
                             const SizedBox(height: 18),
                             ..._notifications.map(
@@ -103,7 +106,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: _FeatureCard(
                                     icon: Icons.layers_outlined,
                                     title: 'Space',
-                                    onTap: () {},
+                                    onTap: () =>
+                                        context.push(AppRoutes.spaceScreenPath),
                                   ),
                                 ),
                                 const SizedBox(width: 18),
@@ -202,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         IconButton(
-          onPressed: () {},
+          onPressed: () => context.push(AppRoutes.notificationPath),
           icon: const Icon(
             Icons.notifications_none_rounded,
             size: 28,

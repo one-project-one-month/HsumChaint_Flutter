@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hsum_chaint/data/models/ui_message.dart';
+import 'package:hsum_chaint/presentation/helpers/appui_helper.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../widgets/auth_common.dart';
 import '../controllers/auth_controller.dart';
@@ -8,8 +10,34 @@ import '../../../presentation/widgets/custom_text_field.dart';
 import '../../../presentation/widgets/primary_button.dart';
 import '../../../utils/extensions/extensions.dart';
 
-class UserSignUpScreen extends GetView<AuthController> {
+class UserSignUpScreen extends StatefulWidget {
   const UserSignUpScreen({super.key});
+
+  @override
+  State<UserSignUpScreen> createState() => _UserSignUpScreenState();
+}
+
+class _UserSignUpScreenState extends State<UserSignUpScreen> {
+  late AuthController controller;
+  late Worker _messageWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<AuthController>();
+
+    _messageWorker = ever<UiMessage?>(controller.uiMessageRx, (message) {
+      if (message == null) return;
+      AppUiHelper.showMessage(message);
+      controller.clearUiMessage();
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageWorker.dispose();
+    super.dispose();
+  }
 
   Future<void> _submit(BuildContext context) async {
     final phone = controller.phoneController.text.trim();
@@ -17,44 +45,41 @@ class UserSignUpScreen extends GetView<AuthController> {
     final password = controller.passwordController.text.trim();
     final confirmPassword = controller.confirmPasswordController.text.trim();
 
-    if (phone.isEmpty) {
-      Get.snackbar('Required', 'Phone number is required');
-      return;
-    }
+    // if (phone.isEmpty) {
+    //   Get.snackbar('Required', 'Phone number is required');
+    //   return;
+    // }
 
-    if (username.isEmpty) {
-      Get.snackbar('Required', 'Username is required');
-      return;
-    }
+    // if (username.isEmpty) {
+    //   Get.snackbar('Required', 'Username is required');
+    //   return;
+    // }
 
-    if (password.isEmpty) {
-      Get.snackbar('Required', 'Password is required');
-      return;
-    }
+    // if (password.isEmpty) {
+    //   Get.snackbar('Required', 'Password is required');
+    //   return;
+    // }
 
-    if (password.length < 6) {
-      Get.snackbar('Invalid', 'Password must be at least 6 characters');
-      return;
-    }
+    // if (password.length < 6) {
+    //   Get.snackbar('Invalid', 'Password must be at least 6 characters');
+    //   return;
+    // }
 
-    if (confirmPassword.isEmpty) {
-      Get.snackbar('Required', 'Confirm password is required');
-      return;
-    }
+    // if (confirmPassword.isEmpty) {
+    //   Get.snackbar('Required', 'Confirm password is required');
+    //   return;
+    // }
 
-    if (password != confirmPassword) {
-      Get.snackbar('Invalid', 'Passwords do not match');
-      return;
-    }
+    // if (password != confirmPassword) {
+    //   Get.snackbar('Invalid', 'Passwords do not match');
+    //   return;
+    // }
 
     final success = await controller.signupUser();
     if (!context.mounted) return;
 
     if (success) {
-      context.pushNamed(
-        AppRoutes.optName,
-        pathParameters: {'phone': phone},
-      );
+      context.pushNamed(AppRoutes.optName, pathParameters: {'phone': phone});
     }
   }
 
@@ -69,42 +94,33 @@ class UserSignUpScreen extends GetView<AuthController> {
           AuthPageHeader(
             title: 'Sign Up',
             onBack: () => context.pop(),
-          ).slideIn(
-            delay: 80.ms,
-            begin: const Offset(0, -0.08),
-            fadeBegin: 0,
-          ),
+          ).slideIn(delay: 80.ms, begin: const Offset(0, -0.08), fadeBegin: 0),
 
           20.h,
 
-          const AuthLogo(size: 130)
-              .fadeScaleIn(duration: 850.ms, scaleBegin: 0.86),
+          const AuthLogo(
+            size: 130,
+          ).fadeScaleIn(duration: 850.ms, scaleBegin: 0.86),
 
           22.h,
 
-          const AuthSectionTitle('Account Information').slideIn(
-            delay: 220.ms,
-            begin: Offset(0, 0.12),
-            fadeBegin: 0,
-          ),
+          const AuthSectionTitle(
+            'Account Information',
+          ).slideIn(delay: 220.ms, begin: Offset(0, 0.12), fadeBegin: 0),
 
           20.h,
 
-          const AuthFieldLabel('Phone Number', required: true).slideIn(
-            delay: 260.ms,
-            begin: Offset(0, 0.10),
-            fadeBegin: 0,
-          ),
+          const AuthFieldLabel(
+            'Phone Number',
+            required: true,
+          ).slideIn(delay: 260.ms, begin: Offset(0, 0.10), fadeBegin: 0),
 
           10.h,
 
           CustomInputTextField(
             controller: controller.phoneController,
             keyboardType: TextInputType.phone,
-            textStyle: const TextStyle(
-              fontSize: 16,
-              color: Colors.black,
-            ),
+            textStyle: const TextStyle(fontSize: 16, color: Colors.black),
             hintText: 'Enter your phone number',
             hintStyle: const TextStyle(
               fontSize: 16,
@@ -124,20 +140,15 @@ class UserSignUpScreen extends GetView<AuthController> {
 
           18.h,
 
-          const AuthFieldLabel('Username').slideIn(
-            delay: 330.ms,
-            begin: Offset(0, 0.10),
-            fadeBegin: 0,
-          ),
+          const AuthFieldLabel(
+            'Username',
+          ).slideIn(delay: 330.ms, begin: Offset(0, 0.10), fadeBegin: 0),
 
           10.h,
 
           CustomInputTextField(
             controller: controller.usernameController,
-            textStyle: const TextStyle(
-              fontSize: 16,
-              color: Colors.black,
-            ),
+            textStyle: const TextStyle(fontSize: 16, color: Colors.black),
             hintText: 'Set your username',
             hintStyle: const TextStyle(
               fontSize: 16,
@@ -157,21 +168,17 @@ class UserSignUpScreen extends GetView<AuthController> {
 
           18.h,
 
-          const AuthFieldLabel('Password', required: true).slideIn(
-            delay: 390.ms,
-            begin: Offset(0, 0.10),
-            fadeBegin: 0,
-          ),
+          const AuthFieldLabel(
+            'Password',
+            required: true,
+          ).slideIn(delay: 390.ms, begin: Offset(0, 0.10), fadeBegin: 0),
 
           10.h,
 
           Obx(
             () => CustomInputTextField(
               controller: controller.passwordController,
-              textStyle: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-              ),
+              textStyle: const TextStyle(fontSize: 16, color: Colors.black),
               hintText: 'Enter your password',
               hintStyle: const TextStyle(
                 fontSize: 16,
@@ -202,21 +209,17 @@ class UserSignUpScreen extends GetView<AuthController> {
 
           18.h,
 
-          const AuthFieldLabel('Confirm Password', required: true).slideIn(
-            delay: 450.ms,
-            begin: Offset(0, 0.10),
-            fadeBegin: 0,
-          ),
+          const AuthFieldLabel(
+            'Confirm Password',
+            required: true,
+          ).slideIn(delay: 450.ms, begin: Offset(0, 0.10), fadeBegin: 0),
 
           10.h,
 
           Obx(
             () => CustomInputTextField(
               controller: controller.confirmPasswordController,
-              textStyle: const TextStyle(
-                fontSize: 16,
-                color: Colors.black,
-              ),
+              textStyle: const TextStyle(fontSize: 16, color: Colors.black),
               hintText: 'Enter your password',
               hintStyle: const TextStyle(
                 fontSize: 16,
@@ -247,29 +250,23 @@ class UserSignUpScreen extends GetView<AuthController> {
 
           24.h,
 
-          const AuthSectionTitle('Contact Information').slideIn(
-            delay: 520.ms,
-            begin: Offset(0, 0.10),
-            fadeBegin: 0,
-          ),
+          const AuthSectionTitle(
+            'Contact Information',
+          ).slideIn(delay: 520.ms, begin: Offset(0, 0.10), fadeBegin: 0),
 
           18.h,
 
-          const AuthFieldLabel('Email Address', trailing: 'optional').slideIn(
-            delay: 560.ms,
-            begin: Offset(0, 0.10),
-            fadeBegin: 0,
-          ),
+          const AuthFieldLabel(
+            'Email Address',
+            trailing: 'optional',
+          ).slideIn(delay: 560.ms, begin: Offset(0, 0.10), fadeBegin: 0),
 
           10.h,
 
           CustomInputTextField(
             controller: controller.emailController,
             keyboardType: TextInputType.emailAddress,
-            textStyle: const TextStyle(
-              fontSize: 16,
-              color: Colors.black,
-            ),
+            textStyle: const TextStyle(fontSize: 16, color: Colors.black),
             hintText: 'Enter your email address',
             hintStyle: const TextStyle(
               fontSize: 16,
@@ -289,21 +286,17 @@ class UserSignUpScreen extends GetView<AuthController> {
 
           18.h,
 
-          const AuthFieldLabel('Phone Number', trailing: 'optional').slideIn(
-            delay: 630.ms,
-            begin: Offset(0, 0.10),
-            fadeBegin: 0,
-          ),
+          const AuthFieldLabel(
+            'Phone Number',
+            trailing: 'optional',
+          ).slideIn(delay: 630.ms, begin: Offset(0, 0.10), fadeBegin: 0),
 
           10.h,
 
           CustomInputTextField(
             controller: controller.contactPhoneController,
             keyboardType: TextInputType.phone,
-            textStyle: const TextStyle(
-              fontSize: 16,
-              color: Colors.black,
-            ),
+            textStyle: const TextStyle(fontSize: 16, color: Colors.black),
             hintText: 'Enter your phone number',
             hintStyle: const TextStyle(
               fontSize: 16,
@@ -327,9 +320,9 @@ class UserSignUpScreen extends GetView<AuthController> {
             () => PrimaryButton(
               text: 'Sign Up',
               isLoading: controller.isLoading.value,
-          onPressed: () => _submit(context),
-        ).fadeIn(delay: 720.ms, duration: 700.ms),
-      ),
+              onPressed: () => _submit(context),
+            ).fadeIn(delay: 720.ms, duration: 700.ms),
+          ),
 
           24.h,
 

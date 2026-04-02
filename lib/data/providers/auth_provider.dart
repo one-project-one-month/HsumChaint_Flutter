@@ -1,37 +1,60 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
-import 'package:hsum_chaint/data/models/user_model.dart';
 import '../services/api_service.dart';
 
+/// Thin network layer — calls [ApiService] and returns raw [Response].
+///
+/// **Dev mode:** Login uses a local fake until the real endpoint is ready.
+/// Switch the comment blocks to enable the real API at any time.
 class AuthProvider {
-  // Inject the ApiService global singleton
   final ApiService _apiService = Get.find<ApiService>();
 
-  /// Login Provider Method
-  Future<Response?> login(String phone, String password) async {
-    final response = await fakeLoginResponse(phone, password);
+  // ── Login ─────────────────────────────────────────────────────────────────
+  Future<Response> login(String phone, String password) async {
+    // ── Real API (uncomment when backend is ready) ──
+    // return await _apiService.post(
+    //   '/auth/login',
+    //   data: {'phone': phone, 'password': password},
+    // );
 
-    if (response['success'] == true) {
+    // ── Fake / dev mode ──────────────────────────────────────────────────────
+    return _fakeLogin(phone, password);
+  }
+
+  /// Simulates the server response so the full error-handling chain can be
+  /// tested locally without a real backend.
+  Future<Response> _fakeLogin(String phone, String password) async {
+    const validPhone = '09123456789';
+    const validPassword = 'password123';
+
+    await Future.delayed(const Duration(seconds: 3)); // ✅ works now
+
+    if (phone == validPhone && password == validPassword) {
       return Response(
         requestOptions: RequestOptions(path: '/auth/login'),
-        data: response['data'],
         statusCode: 200,
+        data: {
+          'token': 'fake-jwt-token-abc123',
+          'user': {
+            'id': 'usr_001',
+            'name': 'San Lin',
+            'phone': phone,
+            'email': 'sanlin@example.com',
+            'role': 'user',
+          },
+        },
       );
     }
 
     return Response(
       requestOptions: RequestOptions(path: '/auth/login'),
-      data: {'message': response['message']},
       statusCode: 401,
+      data: {'message': 'Invalid phone number or password.'},
     );
-    // return await _apiService.post(
-    //   '/auth/login',
-    //   data: {'phone': phone, 'password': password},
-    // );
   }
 
-  /// Signup Provider Method
-  Future<Response?> signupUser({
+  // ── Signup (User) ─────────────────────────────────────────────────────────
+  Future<Response> signupUser({
     required String phone,
     required String username,
     required String password,
@@ -50,7 +73,8 @@ class AuthProvider {
     );
   }
 
-  Future<Response?> signupMonk({
+  // ── Signup (Monk) ─────────────────────────────────────────────────────────
+  Future<Response> signupMonk({
     required String phone,
     required String username,
     required String password,
@@ -71,12 +95,13 @@ class AuthProvider {
     );
   }
 
-  /// Get Profile Provider Method
-  Future<Response?> getProfile() async {
+  // ── Get Profile ───────────────────────────────────────────────────────────
+  Future<Response> getProfile() async {
     return await _apiService.get('/auth/profile');
   }
 
-  Future<Response?> verifyOtp({
+  // ── Verify OTP ────────────────────────────────────────────────────────────
+  Future<Response> verifyOtp({
     required String phone,
     required String otp,
   }) async {
@@ -86,7 +111,8 @@ class AuthProvider {
     );
   }
 
-  Future<Response?> resendOtp({required String phone}) async {
+  // ── Resend OTP ────────────────────────────────────────────────────────────
+  Future<Response> resendOtp({required String phone}) async {
     return await _apiService.post('/auth/resend-otp', data: {'phone': phone});
   }
 }

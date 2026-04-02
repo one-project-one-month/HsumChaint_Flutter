@@ -1,12 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response, FormData, MultipartFile;
-import '../../presentation/helpers/dialog_helper.dart';
+import '../../core/errors/exceptions.dart';
 
+/// Low-level HTTP client.
+///
+/// Every public method THROWS a typed [AppException] on failure.
+/// The repository layer is responsible for catching and converting to [Failure].
 class ApiService extends GetxService {
   late Dio _dio;
   String? _authToken;
 
-  // Replace with your actual API base URL
+  // ── Replace with your real base URL ──────────────────────────────────────
   final String baseUrl = 'https://api.example.com/v1';
 
   ApiService() {
@@ -16,123 +20,139 @@ class ApiService extends GetxService {
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         responseType: ResponseType.json,
+        headers: {'Accept': 'application/json'},
       ),
     );
-
     _setupInterceptors();
   }
 
+  // ── Token management ─────────────────────────────────────────────────────
+  void setAuthToken(String? token) => _authToken = token;
+  void clearAuthToken() => _authToken = null;
+
+  // ── Interceptors ─────────────────────────────────────────────────────────
   void _setupInterceptors() {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          if (_authToken != null && _authToken!.isNotEmpty) {
+          if (_authToken?.isNotEmpty == true) {
             options.headers['Authorization'] = 'Bearer $_authToken';
           }
-          return handler.next(options);
+          handler.next(options);
         },
-        onResponse: (response, handler) {
-          // Handle global success scenarios or logging here
-          return handler.next(response);
-        },
-        onError: (DioException e, handler) {
-          _handleGlobalError(e);
-          return handler.next(e);
-        },
+        onResponse: (response, handler) => handler.next(response),
+        onError: (DioException e, handler) => handler.next(e),
       ),
     );
   }
 
-  /// Global Error Handler mapping HTTP codes to App Exceptions and Dialogs
-  void _handleGlobalError(DioException error) {
-    String message = 'An unexpected error occurred';
+  // ── Error mapping ─────────────────────────────────────────────────────────
+  /// Converts a [DioException] into the appropriate [AppException] subtype.
+  /// Call this inside every try/catch in the REST methods below.
+  AppException _mapError(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return const TimeoutException();
 
-    if (error.type == DioExceptionType.connectionTimeout ||
-        error.type == DioExceptionType.receiveTimeout) {
-      message =
-          'Connection timed out. Please check your internet and try again.';
-      DialogHelper.showErrorSnackbar(title: 'Timeout', message: message);
-    } else if (error.type == DioExceptionType.badResponse) {
-      final statusCode = error.response?.statusCode;
-      final responseData = error.response?.data;
+      case DioExceptionType.badResponse:
+        final code = e.response?.statusCode;
+        // Try to extract the server-side message from common JSON shapes
+        final serverMsg = _extractMessage(e.response?.data);
 
-      if (statusCode == 401) {
-        message = 'Unauthorized access. Please login again.';
-        DialogHelper.showErrorSnackbar(
-          title: 'Session Expired',
-          message: message,
-        );
-        // Optional: Get.offAllNamed('/login'); // Force logout and redirect
-      } else if (statusCode == 403) {
-        message =
-            'Forbidden. You do not have permission to access this resource.';
-        DialogHelper.showErrorSnackbar(
-          title: 'Access Denied',
-          message: message,
-        );
-      } else if (statusCode == 404) {
-        message = 'Resource not found.';
-        DialogHelper.showErrorSnackbar(title: 'Not Found', message: message);
-      } else if (statusCode == 500) {
-        message = 'Internal server error. Please try again later.';
-        DialogHelper.showErrorSnackbar(title: 'Server Error', message: message);
-      } else {
-        // Fallback to server provided error message if available
-        message = responseData?['message'] ?? 'Unexpected Error ($statusCode)';
-        DialogHelper.showErrorSnackbar(
-          title: 'Error $statusCode',
-          message: message,
-        );
-      }
-    } else if (error.type == DioExceptionType.unknown) {
-      message = 'No internet connection or server unreachable.';
-      DialogHelper.showErrorSnackbar(title: 'Network Error', message: message);
+        return switch (code) {
+          400 => ValidationException(
+              serverMsg ?? 'Invalid request. Please check your input.',
+            ),
+          401 => UnauthorizedException(
+              serverMsg ?? 'Session expired. Please log in again.',
+            ),
+          403 => ForbiddenException(
+              serverMsg ?? 'You do not have permission.',
+            ),
+          404 => NotFoundException(
+              serverMsg ?? 'Resource not found.',
+            ),
+          422 => ValidationException(
+              serverMsg ?? 'Validation failed. Please check your input.',
+            ),
+          500 || 502 || 503 => ServerException(
+              serverMsg ?? 'Internal server error. Please try again later.',
+              code,
+            ),
+          _ => ServerException(
+              serverMsg ?? 'Unexpected error ($code).',
+              code,
+            ),
+        };
+
+      case DioExceptionType.connectionError:
+      case DioExceptionType.unknown:
+        // Check if the underlying cause is connectivity
+        return const NetworkException();
+
+      default:
+        return ServerException(e.message ?? 'An unexpected error occurred.');
     }
   }
 
-  /// REST Methods wrapped with error catching
-  void setAuthToken(String? token) {
-    _authToken = token;
+  /// Safely extracts a human-readable message from JSON response bodies.
+  /// Supports: { "message": "..." }, { "error": "..." }, { "errors": [...] }
+  String? _extractMessage(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      if (data['message'] is String) return data['message'] as String;
+      if (data['error'] is String) return data['error'] as String;
+      if (data['errors'] is List) {
+        final errors = data['errors'] as List;
+        if (errors.isNotEmpty) return errors.first?.toString();
+      }
+    }
+    return null;
   }
 
-  Future<Response?> get(
+  // ── REST methods ──────────────────────────────────────────────────────────
+
+  Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
   }) async {
     try {
-      final response = await _dio.get(path, queryParameters: queryParameters);
-      return response;
-    } catch (e) {
-      // Error is caught and displayed by interceptor
-      return null;
+      return await _dio.get(path, queryParameters: queryParameters);
+    } on DioException catch (e) {
+      throw _mapError(e);
     }
   }
 
-  Future<Response?> post(String path, {dynamic data}) async {
+  Future<Response> post(String path, {dynamic data}) async {
     try {
-      final response = await _dio.post(path, data: data);
-
-      return response;
-    } catch (e) {
-      return null;
+      return await _dio.post(path, data: data);
+    } on DioException catch (e) {
+      throw _mapError(e);
     }
   }
 
-  Future<Response?> put(String path, {dynamic data}) async {
+  Future<Response> put(String path, {dynamic data}) async {
     try {
-      final response = await _dio.put(path, data: data);
-      return response;
-    } catch (e) {
-      return null;
+      return await _dio.put(path, data: data);
+    } on DioException catch (e) {
+      throw _mapError(e);
     }
   }
 
-  Future<Response?> delete(String path, {dynamic data}) async {
+  Future<Response> patch(String path, {dynamic data}) async {
     try {
-      final response = await _dio.delete(path, data: data);
-      return response;
-    } catch (e) {
-      return null;
+      return await _dio.patch(path, data: data);
+    } on DioException catch (e) {
+      throw _mapError(e);
+    }
+  }
+
+  Future<Response> delete(String path, {dynamic data}) async {
+    try {
+      return await _dio.delete(path, data: data);
+    } on DioException catch (e) {
+      throw _mapError(e);
     }
   }
 }

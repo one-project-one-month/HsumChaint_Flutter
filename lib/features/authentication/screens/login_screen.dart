@@ -1,22 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hsum_chaint/data/models/ui_message.dart';
 import 'package:hsum_chaint/features/authentication/widgets/popup_widget.dart';
+import 'package:hsum_chaint/features/authentication/widgets/register_popup_widget.dart';
 import 'package:hsum_chaint/features/authentication/widgets/auth_common.dart';
+import 'package:hsum_chaint/presentation/helpers/appui_helper.dart';
 import 'package:hsum_chaint/presentation/widgets/custom_text_field.dart';
 import '../../../core/navigation/app_routes.dart';
 import '../controllers/auth_controller.dart';
 import '../../../presentation/widgets/primary_button.dart';
 import '../../../utils/extensions/extensions.dart';
 
-class LoginScreen extends GetView<AuthController> {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  late final AuthController controller;
 
   static const _fieldBorderColor = Color(0xFFB9852B);
   static const _hintColor = Color(0xFF9B9B9B);
 
+  late Worker _messageWorker;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<AuthController>();
+
+    _messageWorker = ever<UiMessage?>(controller.uiMessageRx, (message) {
+      if (message == null) return;
+      AppUiHelper.showMessage(message);
+      controller.clearUiMessage();
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageWorker.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // controller.showError = (message) {
+    //   // Get.snackbar('Error', message, colorText: TpsColors.black);
+    //   AppUiHelper.showErrorSnackbar(title: 'Login Failed', message: message);
+    // };
     return AuthPageScaffold(
       child: Form(
         child: Column(
@@ -154,31 +188,21 @@ class LoginScreen extends GetView<AuthController> {
                 text: 'Login',
                 isLoading: controller.isLoading.value,
                 onPressed: () {
-                  final phone = controller.phoneController.text.trim();
-                  final password = controller.passwordController.text.trim();
-
-                  if (phone.isEmpty) {
-                    Get.snackbar('Required', 'Phone number is required');
-                    return;
-                  }
-
-                  if (password.isEmpty) {
-                    Get.snackbar('Required', 'Password is required');
-                    return;
-                  }
-
-                  if (password.length < 6) {
-                    Get.snackbar(
-                      'Invalid',
-                      'Password must be at least 6 characters',
-                    );
-                    return;
-                  }
-
                   controller.login();
                   controller.isLoginSuccessful.listen((isSuccess) {
                     if (isSuccess) {
-                      context.go(AppRoutes.homePath);
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        isScrollControlled: true,
+                        builder: (_) => PopupWidget(
+                          title: 'Login Successful !',
+                          buttonText: 'Go to Home',
+                          onPressed: () {
+                            context.go(AppRoutes.homePath);
+                          },
+                        ),
+                      );
                     }
                   });
                 },

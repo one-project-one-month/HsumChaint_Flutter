@@ -1,47 +1,50 @@
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
+import '../../core/errors/exceptions.dart';
 import '../../core/errors/failures.dart';
+
+/// Maps [AppException] → [Failure] for every repository method.
+Failure _toFailure(Object e) {
+  if (e is UnauthorizedException) return UnauthorizedFailure(e.message);
+  if (e is ForbiddenException) return ForbiddenFailure(e.message);
+  if (e is NotFoundException) return NotFoundFailure(e.message);
+  if (e is ValidationException) return ValidationFailure(e.message);
+  if (e is NetworkException) return NetworkFailure(e.message);
+  if (e is TimeoutException) return TimeoutFailure(e.message);
+  if (e is InvalidDataException) return InvalidDataFailure(e.message);
+  if (e is ServerException) return ServerFailure(e.message, e.statusCode);
+  // Fallback for unexpected runtime errors
+  return ServerFailure(e.toString());
+}
 
 class AuthRepository {
   final AuthProvider _provider;
-
   AuthRepository(this._provider);
 
-  /// Standard pattern using Dart 3 Records: Future<(Failure?, Data?)>
-  /// This eliminates the need for heavyweight Either packages like Dartz.
+  // ── Login ───────────────────────────────────────────────────────────────
+  /// Returns `(null, UserModel)` on success or `(Failure, null)` on error.
   Future<(Failure?, UserModel?)> login(String phone, String password) async {
     try {
       final response = await _provider.login(phone, password);
 
-      if (response == null) {
-        return (const NetworkFailure('Unable to reach server'), null);
-      }
-
       if (response.statusCode == 200) {
-        final user = UserModel.fromJson(response.data['user'] ?? {});
-        user.token = response.data['token']?.toString();
+        final data = response.data as Map<String, dynamic>;
+        final user = UserModel.fromJson(data['user'] ?? data);
+        user.token = data['token']?.toString();
         return (null, user);
       }
 
-      return (
-        ServerFailure(
-          response.data?['message']?.toString() ??
-              'Login failed. Invalid credentials.',
-        ),
-        null,
-      );
+      // Non-200 but non-exception (should rarely happen given ApiService throws)
+      final msg = (response.data as Map<String, dynamic>?)?['message']
+              ?.toString() ??
+          'Login failed. Please check your credentials.';
+      return (ServerFailure(msg, response.statusCode), null);
     } catch (e) {
-      if (e is TypeError) {
-        return (
-          const ValidationFailure('Data mapping error from server.'),
-          null,
-        );
-      }
-      return (ServerFailure(e.toString()), null);
+      return (_toFailure(e), null);
     }
   }
 
-  /// Signup method
+  // ── Signup (User) ────────────────────────────────────────────────────────
   Future<(Failure?, bool)> signupUser({
     required String phone,
     required String username,
@@ -58,32 +61,20 @@ class AuthRepository {
         contactPhone: contactPhone,
       );
 
-      if (response == null) {
-        return (const NetworkFailure('Unable to reach server'), false);
-      }
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return (null, true);
       }
 
-      return (
-        ServerFailure(
-          response.data?['message']?.toString() ??
-              'Signup failed. Please try again.',
-        ),
-        false,
-      );
+      final msg = (response.data as Map<String, dynamic>?)?['message']
+              ?.toString() ??
+          'Signup failed. Please try again.';
+      return (ServerFailure(msg, response.statusCode), false);
     } catch (e) {
-      if (e is TypeError) {
-        return (
-          const ValidationFailure('Data mapping error from server.'),
-          false,
-        );
-      }
-      return (ServerFailure(e.toString()), false);
+      return (_toFailure(e), false);
     }
   }
 
+  // ── Signup (Monk) ────────────────────────────────────────────────────────
   Future<(Failure?, bool)> signupMonk({
     required String phone,
     required String username,
@@ -102,48 +93,38 @@ class AuthRepository {
         email: email,
       );
 
-      if (response == null) {
-        return (const NetworkFailure('Unable to reach server'), false);
-      }
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return (null, true);
       }
 
-      return (
-        ServerFailure(
-          response.data?['message']?.toString() ??
-              'Signup failed. Please try again.',
-        ),
-        false,
-      );
+      final msg = (response.data as Map<String, dynamic>?)?['message']
+              ?.toString() ??
+          'Signup failed. Please try again.';
+      return (ServerFailure(msg, response.statusCode), false);
     } catch (e) {
-      if (e is TypeError) {
-        return (
-          const ValidationFailure('Data mapping error from server.'),
-          false,
-        );
-      }
-      return (ServerFailure(e.toString()), false);
+      return (_toFailure(e), false);
     }
   }
 
-  /// Get Profile method
+  // ── Get Profile ──────────────────────────────────────────────────────────
   Future<(Failure?, UserModel?)> getProfile() async {
     try {
       final response = await _provider.getProfile();
 
-      if (response != null && response.statusCode == 200) {
-        final user = UserModel.fromJson(response.data);
+      if (response.statusCode == 200) {
+        final user = UserModel.fromJson(
+          response.data as Map<String, dynamic>,
+        );
         return (null, user);
-      } else {
-        return (const ServerFailure('Failed to load profile details.'), null);
       }
+
+      return (const ServerFailure('Failed to load profile.'), null);
     } catch (e) {
-      return (ServerFailure(e.toString()), null);
+      return (_toFailure(e), null);
     }
   }
 
+  // ── Verify OTP ───────────────────────────────────────────────────────────
   Future<(Failure?, UserModel?)> verifyOtp({
     required String phone,
     required String otp,
@@ -151,48 +132,35 @@ class AuthRepository {
     try {
       final response = await _provider.verifyOtp(phone: phone, otp: otp);
 
-      if (response == null) {
-        return (const NetworkFailure('Unable to reach server'), null);
-      }
-
       if (response.statusCode == 200) {
-        final user = UserModel.fromJson(response.data['user'] ?? {});
-        user.token = response.data['token']?.toString();
+        final data = response.data as Map<String, dynamic>;
+        final user = UserModel.fromJson(data['user'] ?? data);
+        user.token = data['token']?.toString();
         return (null, user);
       }
 
-      return (
-        ServerFailure(
-          response.data?['message']?.toString() ??
-              'OTP verification failed. Please try again.',
-        ),
-        null,
-      );
+      final msg = (response.data as Map<String, dynamic>?)?['message']
+              ?.toString() ??
+          'OTP verification failed.';
+      return (ServerFailure(msg, response.statusCode), null);
     } catch (e) {
-      return (ServerFailure(e.toString()), null);
+      return (_toFailure(e), null);
     }
   }
 
+  // ── Resend OTP ───────────────────────────────────────────────────────────
   Future<(Failure?, bool)> resendOtp({required String phone}) async {
     try {
       final response = await _provider.resendOtp(phone: phone);
 
-      if (response == null) {
-        return (const NetworkFailure('Unable to reach server'), false);
-      }
+      if (response.statusCode == 200) return (null, true);
 
-      final success = response.statusCode == 200;
-      return (
-        success
-            ? null
-            : ServerFailure(
-                response.data?['message']?.toString() ??
-                    'Unable to resend OTP at the moment.',
-              ),
-        success,
-      );
+      final msg = (response.data as Map<String, dynamic>?)?['message']
+              ?.toString() ??
+          'Unable to resend OTP at the moment.';
+      return (ServerFailure(msg, response.statusCode), false);
     } catch (e) {
-      return (ServerFailure(e.toString()), false);
+      return (_toFailure(e), false);
     }
   }
 }

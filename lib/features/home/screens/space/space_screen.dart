@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hsum_chaint/core/navigation/app_routes.dart';
 import 'package:hsum_chaint/utils/extensions/extensions.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -81,7 +82,7 @@ class _SpaceScreenState extends State<SpaceScreen> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () => context.push(AppRoutes.spaceInfoScreenPath),
                   icon: const Icon(Icons.tune, size: 24),
                 ),
               ],

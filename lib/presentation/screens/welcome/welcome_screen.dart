@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hsum_chaint/core/navigation/app_routes.dart';
-import 'package:hsum_chaint/features/authentication/widgets/popup_widget.dart';
+import 'package:hsum_chaint/features/authentication/widgets/register_popup_widget.dart';
 import 'package:hsum_chaint/presentation/widgets/primary_button.dart';
 import 'package:hsum_chaint/utils/extensions/animation_extensions.dart';
 import 'package:hsum_chaint/utils/extensions/num_extensions.dart';
