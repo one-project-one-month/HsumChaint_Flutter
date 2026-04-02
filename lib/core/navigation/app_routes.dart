@@ -12,6 +12,7 @@ abstract final class AppRoutes {
   static const String settingsName = 'settings';
   static const String editProfileName = 'edit_profile';
   static const String profileName = 'profile';
+  static const String navigationName = 'navigation';
 
   //Home
   static const String createSpaceName = 'create_space';
@@ -33,6 +34,7 @@ abstract final class AppRoutes {
   static const String settingsPath = '/settings';
   static const String editProfilePath = '/edit_profile';
   static const String profilePath = '/profile';
+  static const String navigationPath = '/navigation';
 
   //Home
   static const String createSpacePath = '/create_space';
@@ -47,7 +49,6 @@ abstract final class AppRoutes {
     userSignupPath,
     optPath,
     forgotPasswordPath,
-    changePasswordPath,
     resetPasswordPath,
   };
 

@@ -41,9 +41,9 @@ class _UserSignUpScreenState extends State<UserSignUpScreen> {
 
   Future<void> _submit(BuildContext context) async {
     final phone = controller.phoneController.text.trim();
-    final username = controller.usernameController.text.trim();
-    final password = controller.passwordController.text.trim();
-    final confirmPassword = controller.confirmPasswordController.text.trim();
+    // final username = controller.usernameController.text.trim();
+    // final password = controller.passwordController.text.trim();
+    // final confirmPassword = controller.confirmPasswordController.text.trim();
 
     // if (phone.isEmpty) {
     //   Get.snackbar('Required', 'Phone number is required');

@@ -14,8 +14,6 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _primaryBrown = Color(0xFF7A541D);
   static const _textColor = Color(0xFF1F1A17);
 
-  int _currentIndex = 0;
-
   final List<Map<String, String>> _notifications = const [
     {
       'title': 'Transport Hsun Chaint',
@@ -149,14 +147,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        _BottomNavBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-        ),
+        // _BottomNavBar(
+        //   currentIndex: _currentIndex,
+        //   onTap: (index) {
+        //     setState(() {
+        //       _currentIndex = index;
+        //     });
+        //   },
+        //),
       ],
     ).screen(context: context);
   }
@@ -164,19 +162,22 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader() {
     return Row(
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Color(0xFFF7D6B8),
-          ),
-          child: ClipOval(
-            child: Image.network(
-              'https://via.placeholder.com/48x48.png?text=%20',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const Icon(Icons.person, color: _primaryBrown),
+        InkWell(
+          onTap: () => context.push(AppRoutes.profilePath),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFFF7D6B8),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/uzine.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.person, color: _primaryBrown),
+              ),
             ),
           ),
         ),
@@ -548,72 +549,72 @@ class _MiniAvatar extends StatelessWidget {
   }
 }
 
-class _BottomNavBar extends StatelessWidget {
-  const _BottomNavBar({required this.currentIndex, required this.onTap});
+// class _BottomNavBar extends StatelessWidget {
+//   const _BottomNavBar({required this.currentIndex, required this.onTap});
 
-  final int currentIndex;
-  final ValueChanged<int> onTap;
+//   final int currentIndex;
+//   final ValueChanged<int> onTap;
 
-  static const _navBg = Color(0xFFF3EFE8);
-  static const _activeNavBg = Color(0xFFF0D9AF);
-  static const _textColor = Color(0xFF1F1A17);
-  static const _primaryBrown = Color(0xFF7A541D);
+//   static const _navBg = Color(0xFFF3EFE8);
+//   static const _activeNavBg = Color(0xFFF0D9AF);
+//   static const _textColor = Color(0xFF1F1A17);
+//   static const _primaryBrown = Color(0xFF7A541D);
 
-  @override
-  Widget build(BuildContext context) {
-    const items = [
-      (Icons.home_filled, 'Home'),
-      (Icons.person_outline, 'Profile'),
-      (Icons.calendar_month_outlined, 'Calendar'),
-      (Icons.settings_outlined, 'Settings'),
-    ];
+//   @override
+//   Widget build(BuildContext context) {
+//     const items = [
+//       (Icons.home_filled, 'Home'),
+//       (Icons.person_outline, 'Profile'),
+//       (Icons.calendar_month_outlined, 'Calendar'),
+//       (Icons.settings_outlined, 'Settings'),
+//     ];
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-      decoration: const BoxDecoration(
-        color: _navBg,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: List.generate(items.length, (index) {
-          final isActive = index == currentIndex;
-          return GestureDetector(
-            onTap: () => onTap(index),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: EdgeInsets.symmetric(
-                horizontal: isActive ? 18 : 12,
-                vertical: 12,
-              ),
-              decoration: BoxDecoration(
-                color: isActive ? _activeNavBg : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    items[index].$1,
-                    color: isActive ? _primaryBrown : _textColor,
-                    size: 28,
-                  ),
-                  if (isActive) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      items[index].$2,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: _primaryBrown,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
+//     return Container(
+//       padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+//       decoration: const BoxDecoration(
+//         color: _navBg,
+//         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+//       ),
+//       child: Row(
+//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//         children: List.generate(items.length, (index) {
+//           final isActive = index == currentIndex;
+//           return GestureDetector(
+//             onTap: () => onTap(index),
+//             child: AnimatedContainer(
+//               duration: const Duration(milliseconds: 180),
+//               padding: EdgeInsets.symmetric(
+//                 horizontal: isActive ? 18 : 12,
+//                 vertical: 12,
+//               ),
+//               decoration: BoxDecoration(
+//                 color: isActive ? _activeNavBg : Colors.transparent,
+//                 borderRadius: BorderRadius.circular(20),
+//               ),
+//               child: Row(
+//                 children: [
+//                   Icon(
+//                     items[index].$1,
+//                     color: isActive ? _primaryBrown : _textColor,
+//                     size: 28,
+//                   ),
+//                   if (isActive) ...[
+//                     const SizedBox(width: 8),
+//                     Text(
+//                       items[index].$2,
+//                       style: const TextStyle(
+//                         fontSize: 16,
+//                         fontWeight: FontWeight.w500,
+//                         color: _primaryBrown,
+//                       ),
+//                     ),
+//                   ],
+//                 ],
+//               ),
+//             ),
+//           );
+//         }),
+//       ),
+//     );
+//   }
+// }

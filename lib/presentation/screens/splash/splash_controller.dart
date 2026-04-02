@@ -9,7 +9,7 @@ class SplashController extends GetxController {
     await Future.delayed(const Duration(seconds: 2));
 
     return _authCtrl.isAuthenticated
-        ? AppRoutes.homePath
+        ? AppRoutes.navigationPath
         : AppRoutes.welcomePath;
   }
 }

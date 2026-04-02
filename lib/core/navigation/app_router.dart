@@ -14,6 +14,7 @@ import 'package:hsum_chaint/features/home/screens/space/create_space.dart';
 import 'package:hsum_chaint/features/home/screens/space/edit_space.dart';
 import 'package:hsum_chaint/features/home/screens/space/space_info_screen.dart';
 import 'package:hsum_chaint/features/home/screens/space/space_screen.dart';
+import 'package:hsum_chaint/features/navigation/navigation_screen.dart';
 import 'package:hsum_chaint/features/settings/presentation/screens/edit_profile_screen.dart';
 import 'package:hsum_chaint/features/settings/presentation/screens/profile_screen.dart';
 import 'package:hsum_chaint/features/settings/presentation/screens/settings_screen.dart';
@@ -32,8 +33,8 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     ///TODO: Set initialLocation to splash after implementing splash screen
-    //initialLocation: AppRoutes.splashPath,
-    initialLocation: AppRoutes.settingsPath,
+    initialLocation: AppRoutes.splashPath,
+    //initialLocation: AppRoutes.settingsPath,
     refreshListenable: _refreshNotifier,
     redirect: _redirect,
     routes: <RouteBase>[
@@ -134,26 +135,38 @@ class AppRouter {
         name: AppRoutes.profileName,
         builder: (context, state) => const ProfileScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.navigationPath,
+        name: AppRoutes.navigationName,
+        builder: (context, state) => const NavigationScreen(),
+      ),
     ],
     errorBuilder: (context, state) => RouteErrorScreen(error: state.error),
   );
 
   ///TODO: Implement route guards and redirection logic based on authentication state
   String? _redirect(BuildContext context, GoRouterState state) {
-    final bool isAuthenticated = _authController.isAuthenticated;
-    final bool isAuthLocation = AppRoutes.isAuthLocation(state.matchedLocation);
-    final bool isSplashLocation = state.matchedLocation == AppRoutes.splashPath;
+    final isAuthenticated = _authController.isAuthenticated;
+    final location = state.matchedLocation;
 
-    if (isSplashLocation) {
-      return null;
-    }
+    final isSplash = location == AppRoutes.splashPath;
+    final isAuthRoute = AppRoutes.isAuthLocation(location);
+    final isNavigationRoute = location == AppRoutes.navigationPath;
+    final isWelcomeRoute = location == AppRoutes.welcomePath;
 
-    if (!isAuthenticated && !isAuthLocation) {
+    // Allow splash to decide/loading state
+    if (isSplash) return null;
+
+    // Not logged in -> only allow auth/welcome routes
+    if (!isAuthenticated) {
+      if (isAuthRoute || isWelcomeRoute) return null;
       return AppRoutes.welcomePath;
     }
 
-    if (isAuthenticated && isAuthLocation) {
-      return AppRoutes.homePath;
+    // Logged in -> prevent going back to auth/welcome
+    if (isAuthenticated) {
+      if (isAuthRoute || isWelcomeRoute) return AppRoutes.navigationPath;
+      return null;
     }
 
     return null;

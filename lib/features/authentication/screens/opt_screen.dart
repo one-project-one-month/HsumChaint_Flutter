@@ -83,7 +83,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       success,
     ) {
       if (success && mounted) {
-        context.go(AppRoutes.homePath);
+        context.go(AppRoutes.navigationPath);
       }
     });
   }

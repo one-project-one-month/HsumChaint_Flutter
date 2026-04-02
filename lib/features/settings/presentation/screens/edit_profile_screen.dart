@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hsum_chaint/features/settings/controllers/settings_controller.dart';
 import 'package:hsum_chaint/utils/extensions/screen_extensions.dart';
 import 'package:hsum_chaint/presentation/widgets/labelled_text_field.dart';
 import 'package:hsum_chaint/presentation/widgets/settings_action_button.dart';
@@ -12,10 +13,19 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+  late SettingsController controller;
+
   final _nameController = TextEditingController(text: 'U Law Ti Ka');
   final _emailController = TextEditingController(text: 'lawtika@gmail.com');
   final _contactController = TextEditingController(text: '09422675753');
-  final _addressController = TextEditingController(text: 'Min Ye Kyaw Swar Street');
+  final _addressController = TextEditingController(
+    text: 'Min Ye Kyaw Swar Street',
+  );
+  @override
+  initState() {
+    super.initState();
+    controller = SettingsController();
+  }
 
   @override
   void dispose() {
@@ -84,7 +94,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             alignment: Alignment.centerLeft,
             child: GestureDetector(
               onTap: () => Navigator.of(context).pop(),
-              child: const Icon(Icons.chevron_left, size: 32, color: Color(0xFF1F1A17)),
+              child: const Icon(
+                Icons.chevron_left,
+                size: 32,
+                color: Color(0xFF1F1A17),
+              ),
             ),
           ),
           const Text(
@@ -119,32 +133,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ],
           ),
           child: ClipOval(
-            child: Image.asset(
-              'assets/uzine.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/uzine.png', fit: BoxFit.cover),
           ),
         ),
         Positioned(
           bottom: 0,
           right: 0,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.camera_alt_outlined,
-              size: 24,
-              color: Color(0xFF1F1A17),
+          child: InkWell(
+            onTap: () => controller.imageCtrl.openImagePicker(context),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.camera_alt_outlined,
+                size: 24,
+                color: Color(0xFF1F1A17),
+              ),
             ),
           ),
         ),
@@ -163,7 +177,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
                 side: const BorderSide(color: Color(0xFF9C6644)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: const Text(
                 'Cancel',
@@ -177,10 +193,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: SettingsActionButton(
-              text: 'Save',
-              onPressed: () {},
-            ),
+            child: SettingsActionButton(text: 'Save', onPressed: () {}),
           ),
         ],
       ),

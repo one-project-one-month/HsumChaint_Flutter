@@ -199,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           title: 'Login Successful !',
                           buttonText: 'Go to Home',
                           onPressed: () {
-                            context.go(AppRoutes.homePath);
+                            context.go(AppRoutes.navigationPath);
                           },
                         ),
                       );
