@@ -150,10 +150,10 @@ class AuthController extends GetxController {
 
     if (user != null) {
       final token = user.token ?? '';
-      // if (token.isNotEmpty) _apiService.setAuthToken(token);
+      if (token.isNotEmpty) _apiService.setAuthToken(token);
 
-      // ✅ Persist session
-      //  await _session.saveSession(user: user, token: token);
+      //  ✅ Persist session
+      await _session.saveSession(user: user, token: token);
 
       currentUser.value = user;
       isLoginSuccessful.value = true;
