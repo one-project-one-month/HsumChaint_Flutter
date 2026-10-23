@@ -16,6 +16,12 @@ class AuthController extends GetxController {
   final Rxn<UserModel> currentUser = Rxn<UserModel>();
   bool get isAuthenticated => currentUser.value != null;
 
+  @override
+  void onInit() {
+    super.onInit();
+    _apiService.onSessionExpired = () => currentUser.value = null;
+  }
+
   // Inputs
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -96,7 +102,6 @@ class AuthController extends GetxController {
         message: failure.message,
       );
     } else if (user != null) {
-      _apiService.setAuthToken(user.token);
       currentUser.value = user;
       DialogHelper.showSuccessSnackbar(
         title: 'Success',
@@ -137,8 +142,8 @@ class AuthController extends GetxController {
     }
 
     DialogHelper.showSuccessSnackbar(
-      title: 'OTP Sent',
-      message: 'We sent a verification code to $phone.',
+      title: 'အကောင့်ဖွင့်ပြီးပါပြီ',
+      message: 'ဖုန်းနံပါတ်နှင့် စကားဝှက်ဖြင့် ဝင်ရောက်ပါ။',
     );
     return true;
   }
@@ -175,8 +180,8 @@ class AuthController extends GetxController {
     }
 
     DialogHelper.showSuccessSnackbar(
-      title: 'OTP Sent',
-      message: 'We sent a verification code to $phone.',
+      title: 'အကောင့်ဖွင့်ပြီးပါပြီ',
+      message: 'ဖုန်းနံပါတ်နှင့် စကားဝှက်ဖြင့် ဝင်ရောက်ပါ။',
     );
     return true;
   }
@@ -186,6 +191,7 @@ class AuthController extends GetxController {
       title: 'Logout',
       description: 'Are you sure you want to log out?',
       onConfirm: () {
+        _apiService.clearSession();
         currentUser.value = null;
         clearControllers();
         DialogHelper.showSuccessSnackbar(

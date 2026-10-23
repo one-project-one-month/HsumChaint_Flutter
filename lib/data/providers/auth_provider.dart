@@ -3,68 +3,46 @@ import 'package:get/get.dart' hide Response;
 import '../services/api_service.dart';
 
 class AuthProvider {
-  // Inject the ApiService global singleton
-  final ApiService _apiService = Get.find<ApiService>();
-
-  /// Login Provider Method
-  Future<Response?> login(String phone, String password) async {
-    return await _apiService.post(
-      '/auth/login',
-      data: {'phone': phone, 'password': password},
-    );
-  }
-
-  /// Signup Provider Method
-  Future<Response?> signupUser({
+  final ApiService _api = Get.find<ApiService>();
+  Future<Response<dynamic>> login(String phone, String password) => _api.post(
+    '/api/v1/auth/login',
+    data: {'phoneNumber': phone, 'password': password},
+  );
+  Future<Response<dynamic>> signupUser({
     required String phone,
     required String username,
     required String password,
     String? email,
     String? contactPhone,
-  }) async {
-    return await _apiService.post('/auth/signup/user', data: {
-      'phone': phone,
-      'username': username,
+  }) => _api.post(
+    '/api/v1/auth/register',
+    data: {
+      'phoneNumber': phone,
+      'name': username,
       'password': password,
-      if (email?.isNotEmpty ?? false) 'email': email,
-      if (contactPhone?.isNotEmpty ?? false) 'contact_phone': contactPhone,
-    });
-  }
-
-  Future<Response?> signupMonk({
+      'roleId': 3,
+      'email': email,
+      'contactPhoneNumber': contactPhone,
+    },
+  );
+  Future<Response<dynamic>> signupMonk({
     required String phone,
     required String username,
     required String password,
     required String monasteryName,
     required String monasteryAddress,
     String? email,
-  }) async {
-    return await _apiService.post('/auth/signup/monk', data: {
-      'phone': phone,
-      'username': username,
+  }) => _api.post(
+    '/api/v1/auth/register',
+    data: {
+      'phoneNumber': phone,
+      'name': username,
       'password': password,
-      'monastery_name': monasteryName,
-      'monastery_address': monasteryAddress,
-      if (email?.isNotEmpty ?? false) 'email': email,
-    });
-  }
-
-  /// Get Profile Provider Method
-  Future<Response?> getProfile() async {
-    return await _apiService.get('/auth/profile');
-  }
-
-  Future<Response?> verifyOtp({
-    required String phone,
-    required String otp,
-  }) async {
-    return await _apiService.post('/auth/verify-otp', data: {
-      'phone': phone,
-      'otp': otp,
-    });
-  }
-
-  Future<Response?> resendOtp({required String phone}) async {
-    return await _apiService.post('/auth/resend-otp', data: {'phone': phone});
-  }
+      'roleId': 2,
+      'monasteryName': monasteryName,
+      'monasteryAddress': monasteryAddress,
+      'email': email,
+    },
+  );
+  Future<Response<dynamic>> getProfile(int id) => _api.get('/api/user/$id');
 }

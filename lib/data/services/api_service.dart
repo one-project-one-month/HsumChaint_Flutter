@@ -1,137 +1,147 @@
 import 'package:dio/dio.dart';
-import 'package:get/get.dart' hide Response, FormData, MultipartFile;
-import '../../presentation/helpers/dialog_helper.dart';
+import 'package:flutter/foundation.dart';
+import 'package:get/get.dart' hide Response;
+
+class ApiFailure implements Exception {
+  final String message;
+  const ApiFailure(this.message);
+  @override
+  String toString() => message;
+}
 
 class ApiService extends GetxService {
-  late Dio _dio;
-  String? _authToken;
-
-  // Replace with your actual API base URL
-  final String baseUrl = 'https://api.example.com/v1';
-
-  ApiService() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
-        responseType: ResponseType.json,
-      ),
-    );
-
-    _setupInterceptors();
-  }
-
-  void _setupInterceptors() {
-    _dio.interceptors.add(
+  final Dio dio;
+  String? _authToken, _refreshToken;
+  int? _userId;
+  int _sessionVersion = 0;
+  Future<void>? _refreshing;
+  VoidCallback? onSessionExpired;
+  ApiService({Dio? client})
+    : dio =
+          client ??
+          Dio(
+            BaseOptions(
+              baseUrl: const String.fromEnvironment(
+                'API_BASE_URL',
+                defaultValue: 'https://localhost:7067',
+              ),
+              connectTimeout: const Duration(seconds: 20),
+              receiveTimeout: const Duration(seconds: 30),
+            ),
+          ) {
+    dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          if (_authToken != null && _authToken!.isNotEmpty) {
+          if (_authToken != null) {
             options.headers['Authorization'] = 'Bearer $_authToken';
           }
-          return handler.next(options);
-        },
-        onResponse: (response, handler) {
-          // Handle global success scenarios or logging here
-          return handler.next(response);
-        },
-        onError: (DioException e, handler) {
-          _handleGlobalError(e);
-          return handler.next(e);
+          handler.next(options);
         },
       ),
     );
   }
+  void setAuthToken(String? token) => _authToken = token;
+  void setSession(String token, String refreshToken, int userId) {
+    _sessionVersion++;
+    _authToken = token;
+    _refreshToken = refreshToken;
+    _userId = userId;
+  }
 
-  /// Global Error Handler mapping HTTP codes to App Exceptions and Dialogs
-  void _handleGlobalError(DioException error) {
-    String message = 'An unexpected error occurred';
+  void clearSession() {
+    _sessionVersion++;
+    _refreshing = null;
+    _authToken = null;
+    _refreshToken = null;
+    _userId = null;
+  }
 
-    if (error.type == DioExceptionType.connectionTimeout ||
-        error.type == DioExceptionType.receiveTimeout) {
-      message =
-          'Connection timed out. Please check your internet and try again.';
-      DialogHelper.showErrorSnackbar(title: 'Timeout', message: message);
-    } else if (error.type == DioExceptionType.badResponse) {
-      final statusCode = error.response?.statusCode;
-      final responseData = error.response?.data;
-
-      if (statusCode == 401) {
-        message = 'Unauthorized access. Please login again.';
-        DialogHelper.showErrorSnackbar(
-          title: 'Session Expired',
-          message: message,
-        );
-        // Optional: Get.offAllNamed('/login'); // Force logout and redirect
-      } else if (statusCode == 403) {
-        message =
-            'Forbidden. You do not have permission to access this resource.';
-        DialogHelper.showErrorSnackbar(
-          title: 'Access Denied',
-          message: message,
-        );
-      } else if (statusCode == 404) {
-        message = 'Resource not found.';
-        DialogHelper.showErrorSnackbar(title: 'Not Found', message: message);
-      } else if (statusCode == 500) {
-        message = 'Internal server error. Please try again later.';
-        DialogHelper.showErrorSnackbar(title: 'Server Error', message: message);
-      } else {
-        // Fallback to server provided error message if available
-        message = responseData?['message'] ?? 'Unexpected Error ($statusCode)';
-        DialogHelper.showErrorSnackbar(
-          title: 'Error $statusCode',
-          message: message,
-        );
+  Future<void> _refresh() async {
+    final version = _sessionVersion;
+    final userId = _userId;
+    try {
+      final response = await dio.post(
+        '/api/v1/auth/refresh-token',
+        data: {'userId': _userId, 'refreshToken': _refreshToken},
+      );
+      final envelope = response.data as Map<String, dynamic>;
+      if (envelope['isSuccess'] != true) {
+        throw const ApiFailure('Session expired');
       }
-    } else if (error.type == DioExceptionType.unknown) {
-      message = 'No internet connection or server unreachable.';
-      DialogHelper.showErrorSnackbar(title: 'Network Error', message: message);
+      final data = envelope['data'] as Map<String, dynamic>;
+      if (version != _sessionVersion) {
+        throw const ApiFailure('Session changed.');
+      }
+      setSession(data['accessToken'], data['refreshToken'], userId!);
+    } catch (_) {
+      if (version == _sessionVersion) {
+        clearSession();
+        onSessionExpired?.call();
+      }
+      throw const ApiFailure('အကောင့် ပြန်ဝင်ပေးပါ။');
     }
   }
 
-  /// REST Methods wrapped with error catching
-  void setAuthToken(String? token) {
-    _authToken = token;
-  }
-
-  Future<Response?> get(
+  Future<Response<dynamic>> request(
+    String method,
     String path, {
+    dynamic data,
     Map<String, dynamic>? queryParameters,
+    bool retry = true,
   }) async {
     try {
-      final response = await _dio.get(path, queryParameters: queryParameters);
+      final response = await dio.request<dynamic>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: Options(method: method),
+      );
+      if (response.data is Map && response.data['isSuccess'] == false) {
+        throw ApiFailure(
+          response.data['message']?.toString() ?? 'လုပ်ဆောင်မှု မအောင်မြင်ပါ။',
+        );
+      }
       return response;
-    } catch (e) {
-      // Error is caught and displayed by interceptor
-      return null;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 401 &&
+          retry &&
+          _refreshToken != null &&
+          !path.contains('/auth/')) {
+        final pending = _refreshing ??= _refresh();
+        try {
+          await pending;
+        } finally {
+          if (identical(_refreshing, pending)) _refreshing = null;
+        }
+        return request(
+          method,
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          retry: false,
+        );
+      }
+      if (error.response?.statusCode == 401 && !path.contains('/auth/')) {
+        clearSession();
+        onSessionExpired?.call();
+      }
+      final body = error.response?.data;
+      throw ApiFailure(
+        body is Map
+            ? (body['message'] ?? body['title'] ?? 'Request failed').toString()
+            : 'ဆာဗာနှင့် ချိတ်ဆက်မရပါ။ ပြန်ကြိုးစားပါ။',
+      );
     }
   }
 
-  Future<Response?> post(String path, {dynamic data}) async {
-    try {
-      final response = await _dio.post(path, data: data);
-      return response;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<Response?> put(String path, {dynamic data}) async {
-    try {
-      final response = await _dio.put(path, data: data);
-      return response;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<Response?> delete(String path, {dynamic data}) async {
-    try {
-      final response = await _dio.delete(path, data: data);
-      return response;
-    } catch (e) {
-      return null;
-    }
-  }
+  Future<Response<dynamic>> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) => request('GET', path, queryParameters: queryParameters);
+  Future<Response<dynamic>> post(String path, {dynamic data}) =>
+      request('POST', path, data: data);
+  Future<Response<dynamic>> put(String path, {dynamic data}) =>
+      request('PUT', path, data: data);
+  Future<Response<dynamic>> delete(String path, {dynamic data}) =>
+      request('DELETE', path, data: data);
 }

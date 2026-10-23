@@ -1,39 +1,44 @@
 class UserModel {
-  final String id;
-  final String name;
-  final String? email;
-  final String? phone;
-  final String? username;
+  final String id, name, roleName;
+  final String? email, phone, username, contactPhoneNumber, refreshToken;
+  final int roleId;
+  final List<String> permissions;
   String? token;
-
   UserModel({
     required this.id,
     required this.name,
+    this.roleName = '',
     this.email,
     this.phone,
     this.username,
+    this.contactPhoneNumber,
+    this.refreshToken,
+    this.roleId = 3,
+    this.permissions = const [],
     this.token,
   });
-
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? '',
-      email: json['email']?.toString(),
-      phone: json['phone']?.toString(),
-      username: json['username']?.toString(),
-      token: json['token']?.toString(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'phone': phone,
-      'username': username,
-      'token': token,
-    };
-  }
+  bool get isMonk => roleId == 2;
+  bool get isDonor => roleId == 3;
+  bool can(String permission) => permissions.contains(permission);
+  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
+    id: (json['id'] ?? json['ID'] ?? '').toString(),
+    name: (json['name'] ?? '').toString(),
+    roleName: (json['roleName'] ?? '').toString(),
+    email: json['email'],
+    phone: json['phoneNumber'],
+    contactPhoneNumber: json['contactPhoneNumber'],
+    roleId: (json['roleId'] as num?)?.toInt() ?? 0,
+    permissions: List<String>.from(json['permissions'] ?? []),
+    token: json['accessToken'],
+    refreshToken: json['refreshToken'],
+  );
+  Map<String, dynamic> toJson() => {
+    'id': int.parse(id),
+    'name': name,
+    'email': email,
+    'phoneNumber': phone,
+    'contactPhoneNumber': contactPhoneNumber,
+    'roleId': roleId,
+    'roleName': roleName,
+  };
 }
