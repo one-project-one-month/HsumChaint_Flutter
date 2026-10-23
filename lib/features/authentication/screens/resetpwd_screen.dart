@@ -98,6 +98,7 @@ class _ForgotPasswordResetScreenState extends State<ForgotPasswordResetScreen> {
 
 class PasswordField extends StatelessWidget {
   const PasswordField({
+    super.key,
     required this.controller,
     required this.hintText,
     required this.isVisible,

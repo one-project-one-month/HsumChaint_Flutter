@@ -85,6 +85,7 @@ class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
 
 class PasswordPageWrapper extends StatelessWidget {
   const PasswordPageWrapper({
+    super.key,
     required this.title,
     required this.child,
     required this.buttonText,
@@ -169,7 +170,7 @@ class PasswordPageWrapper extends StatelessWidget {
 }
 
 class FieldLabel extends StatelessWidget {
-  const FieldLabel(this.text);
+  const FieldLabel(this.text, {super.key});
 
   final String text;
 
