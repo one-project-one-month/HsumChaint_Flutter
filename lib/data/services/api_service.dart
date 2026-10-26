@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide Response;
 
@@ -29,6 +31,14 @@ class ApiService extends GetxService {
               receiveTimeout: const Duration(seconds: 30),
             ),
           ) {
+    if (!kIsWeb && dio.httpClientAdapter is IOHttpClientAdapter) {
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) => true;
+        return client;
+      };
+    }
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {

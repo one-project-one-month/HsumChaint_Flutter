@@ -180,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (body == null || !mounted) return;
     await _save(() async {
       await widget.repo.call(
-        'PUT',
+        'PATCH',
         '/api/user/${user.id}/monk-profile',
         body: body,
       );

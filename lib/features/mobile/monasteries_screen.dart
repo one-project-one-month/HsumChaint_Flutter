@@ -551,7 +551,7 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
     if (body == null || !mounted) return;
     await _mutate(() async {
       await widget.repo.call(
-        'PUT',
+        'PATCH',
         '/api/v1/monasteries/${monastery.id}',
         body: body,
       );
