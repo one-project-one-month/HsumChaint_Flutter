@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hsum_chaint/data/models/mobile_models.dart';
 import 'package:hsum_chaint/data/models/user_model.dart';
 import 'package:hsum_chaint/data/providers/auth_provider.dart';
@@ -471,4 +472,66 @@ void main() {
     expect(find.text('ပယ်ဖျက်ရန်'), findsNothing);
     expect(find.text('လက်ခံ / ငြင်းပယ်'), findsNothing);
   });
+
+  test(
+    'session persistence: saves session to shared_preferences and restores on startup',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      Get.put<SharedPreferences>(prefs);
+
+      final api = service(FakeAdapter((_) => ok(true)));
+      Get.put<ApiService>(api);
+      final repo = AuthRepository(AuthProvider());
+      final controller = AuthController(repo);
+      Get.put<AuthController>(controller);
+
+      expect(controller.isAuthenticated, isFalse);
+
+      final testUser = UserModel(
+        id: '42',
+        name: 'Test Donor',
+        roleId: 3,
+        token: 'jwt-access-token',
+        refreshToken: 'jwt-refresh-token',
+        permissions: const ['Donation.Create'],
+      );
+      controller.currentUser.value = testUser;
+
+      final stored = prefs.getString(AuthController.sessionKey);
+      expect(stored, isNotNull);
+      final decoded = jsonDecode(stored!) as Map<String, dynamic>;
+      expect(decoded['id'], 42);
+      expect(decoded['name'], 'Test Donor');
+      expect(decoded['accessToken'], 'jwt-access-token');
+      expect(decoded['refreshToken'], 'jwt-refresh-token');
+
+      // Reset Get and simulate fresh launch
+      Get.reset();
+      Get.put<SharedPreferences>(prefs);
+      Get.put<ApiService>(service(FakeAdapter((_) => ok(true))));
+      final newController = AuthController(repo);
+      Get.put<AuthController>(newController);
+
+      expect(newController.isAuthenticated, isTrue);
+      expect(newController.currentUser.value?.id, '42');
+      expect(newController.currentUser.value?.name, 'Test Donor');
+      expect(newController.currentUser.value?.token, 'jwt-access-token');
+
+      // Test token refresh updates storage
+      Get.find<ApiService>().onTokenRefreshed?.call(
+        'new-access-token',
+        'new-refresh-token',
+      );
+      final updatedStored = prefs.getString(AuthController.sessionKey);
+      final updatedDecoded =
+          jsonDecode(updatedStored!) as Map<String, dynamic>;
+      expect(updatedDecoded['accessToken'], 'new-access-token');
+      expect(updatedDecoded['refreshToken'], 'new-refresh-token');
+
+      // Test clearing session
+      newController.currentUser.value = null;
+      expect(prefs.getString(AuthController.sessionKey), isNull);
+    },
+  );
 }
