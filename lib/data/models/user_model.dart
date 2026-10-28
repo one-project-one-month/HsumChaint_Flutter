@@ -25,20 +25,23 @@ class UserModel {
     name: (json['name'] ?? '').toString(),
     roleName: (json['roleName'] ?? '').toString(),
     email: json['email'],
-    phone: json['phoneNumber'],
+    phone: json['phoneNumber'] ?? json['phone'],
     contactPhoneNumber: json['contactPhoneNumber'],
     roleId: (json['roleId'] as num?)?.toInt() ?? 0,
     permissions: List<String>.from(json['permissions'] ?? []),
-    token: json['accessToken'],
+    token: json['accessToken'] ?? json['token'],
     refreshToken: json['refreshToken'],
   );
   Map<String, dynamic> toJson() => {
-    'id': int.parse(id),
+    'id': int.tryParse(id) ?? id,
     'name': name,
     'email': email,
     'phoneNumber': phone,
     'contactPhoneNumber': contactPhoneNumber,
     'roleId': roleId,
     'roleName': roleName,
+    'permissions': permissions,
+    'accessToken': token,
+    'refreshToken': refreshToken,
   };
 }
