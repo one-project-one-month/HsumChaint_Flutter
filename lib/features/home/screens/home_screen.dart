@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          if (widget.tab != 'donations' && widget.tab != 'monasteries')
+          if (widget.tab != 'donations' && widget.tab != 'monasteries' && widget.tab != 'notifications')
           IconButton(
             tooltip: 'အသိပေးချက်',
             onPressed: () => context.go('/notifications'),

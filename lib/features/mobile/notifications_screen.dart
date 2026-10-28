@@ -55,11 +55,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
             IconButton(
-              tooltip: 'ပြန်တင်ရန်',
-              onPressed: _reload,
-              icon: const Icon(Icons.refresh),
-            ),
-            IconButton(
               tooltip: 'အားလုံးဖျက်ရန်',
               onPressed: busy ? null : _clear,
               icon: const Icon(Icons.delete_sweep_outlined),
