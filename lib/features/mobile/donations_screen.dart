@@ -61,34 +61,34 @@ class _DonationsScreenState extends State<DonationsScreen> {
                 Expanded(
                   child: Text(
                     widget.user.isMonk
-                        ? 'ဆွမ်းစီမံခန့်ခွဲမှု'
+                        ? 'အလှူစာရင်းများ'
                         : 'မိမိ၏ လှူဒါန်းမှုများ',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'ပြန်တင်ရန်',
-                  onPressed: _reload,
-                  icon: const Icon(Icons.refresh),
-                ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     initialValue: monasteryId,
                     isExpanded: true,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'ကျောင်းတိုက်',
+                      prefixIcon: const Icon(Icons.temple_buddhist_outlined, size: 20),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     items: [
                       const DropdownMenuItem<int>(
                         value: null,
-                        child: Text('အားလုံး'),
+                        child: Text('အားလုံး', overflow: TextOverflow.ellipsis),
                       ),
                       for (final m in widget.mine)
                         DropdownMenuItem(
@@ -103,21 +103,28 @@ class _DonationsScreenState extends State<DonationsScreen> {
                     }),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     initialValue: status,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'အခြေအနေ'),
+                    decoration: InputDecoration(
+                      labelText: 'အခြေအနေ',
+                      prefixIcon: const Icon(Icons.tune_outlined, size: 20),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     items: [
                       const DropdownMenuItem<int>(
                         value: null,
-                        child: Text('အားလုံး'),
+                        child: Text('အားလုံး', overflow: TextOverflow.ellipsis),
                       ),
                       for (var i = 0; i < donationStatuses.length; i++)
                         DropdownMenuItem(
                           value: i,
-                          child: Text(donationStatuses[i]),
+                          child: Text(donationStatuses[i], overflow: TextOverflow.ellipsis),
                         ),
                     ],
                     onChanged: (v) => setState(() {
