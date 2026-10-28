@@ -76,23 +76,28 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                   ),
                 ),
                 if (widget.user.isMonk && widget.user.can('Monastery.Create'))
-                  IconButton(
-                    tooltip: 'ကျောင်းတိုက်အသစ်',
+                  FilledButton.icon(
                     onPressed: busy ? null : _create,
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('ကျောင်းတိုက်အသစ်ဖန်တီးရန်'),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                    ),
                   ),
-                IconButton(
-                  tooltip: 'ပြန်တင်ရန်',
-                  onPressed: _reload,
-                  icon: const Icon(Icons.refresh),
-                ),
               ],
             ),
             const SizedBox(height: 12),
             SegmentedButton<int>(
+              showSelectedIcon: false,
               segments: const [
-                ButtonSegment(value: 0, label: Text('ရှာဖွေရန်')),
-                ButtonSegment(value: 1, label: Text('မိမိကျောင်း')),
+                ButtonSegment(value: 0, label: Text('ကျောင်းတိုက်အားလုံး')),
+                ButtonSegment(value: 1, label: Text('မိမိကျောင်းတိုက်')),
                 ButtonSegment(value: 2, label: Text('ဖိတ်ကြားချက်')),
               ],
               selected: {section},
@@ -106,14 +111,50 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: search,
+                textInputAction: TextInputAction.search,
                 onSubmitted: (_) => _search(),
                 decoration: InputDecoration(
-                  labelText: 'ကျောင်းတိုက်ရှာဖွေရန်',
+                  hintText: 'ကျောင်းတိုက် အမည် သို့မဟုတ် မြို့နယ်ဖြင့် ရှာဖွေရန်...',
                   prefixIcon: const Icon(Icons.search),
-                  suffixIcon: IconButton(
-                    tooltip: 'ရှာဖွေရန်',
-                    onPressed: _search,
-                    icon: const Icon(Icons.arrow_forward),
+                  suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: search,
+                    builder: (context, value, _) {
+                      if (value.text.isNotEmpty) {
+                        return IconButton(
+                          tooltip: 'ရှင်းလင်းရန်',
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () {
+                            search.clear();
+                            _search();
+                          },
+                        );
+                      }
+                      return IconButton(
+                        tooltip: 'ရှာဖွေရန်',
+                        icon: const Icon(Icons.arrow_forward),
+                        onPressed: _search,
+                      );
+                    },
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -273,43 +314,49 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                   style: const TextStyle(color: Colors.grey),
                 ),
               ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (widget.user.can('Donation.Create'))
-                  FilledButton.tonal(
-                    onPressed: () async {
-                      final changed = await showDonationForm(
-                        context,
-                        widget.repo,
-                        widget.user,
-                        widget.mine,
-                        selected: current,
-                      );
-                      if (changed) widget.onChanged();
-                    },
-                    child: const Text('လှူဒါန်းရန်'),
-                  ),
-                if (current.isMember)
-                  OutlinedButton(
-                    onPressed: () async {
-                      await Navigator.push<bool>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => MonasteryDetails(
-                            repo: widget.repo,
-                            monastery: current,
-                          ),
+            if (widget.user.can('Donation.Create') || current.isMember) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  if (widget.user.can('Donation.Create'))
+                    FilledButton.tonal(
+                      onPressed: () async {
+                        final changed = await showDonationForm(
+                          context,
+                          widget.repo,
+                          widget.user,
+                          widget.mine,
+                          selected: current,
+                        );
+                        if (changed) widget.onChanged();
+                      },
+                      child: const Text('လှူဒါန်းရန်'),
+                    ),
+                  const Spacer(),
+                  if (current.isMember)
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                      );
-                      if (mounted) widget.onChanged();
-                    },
-                    child: const Text('အချက်အလက်နှင့် အဖွဲ့ဝင်များ'),
-                  ),
-              ],
-            ),
+                      ),
+                      onPressed: () async {
+                        await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MonasteryDetails(
+                              repo: widget.repo,
+                              monastery: current,
+                            ),
+                          ),
+                        );
+                        if (mounted) widget.onChanged();
+                      },
+                      child: const Text('အချက်အလက်နှင့် အဖွဲ့ဝင်များ'),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
