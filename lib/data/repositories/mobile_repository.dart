@@ -107,8 +107,13 @@ class MobileRepository {
   }
 
   Future<void> donationAction(int id, String action, {Json? body}) async {
+    final method = switch (action) {
+      'delete' => 'DELETE',
+      'schedule' => 'PUT',
+      _ => 'POST',
+    };
     await call(
-      action == 'delete' ? 'DELETE' : 'PUT',
+      method,
       '/api/v1/donations/$id${action == 'delete' ? '' : '/$action'}',
       body: body,
     );
@@ -116,7 +121,7 @@ class MobileRepository {
 
   Future<void> notification(int id, int userId, {bool delete = false}) async {
     await call(
-      delete ? 'DELETE' : 'PUT',
+      delete ? 'DELETE' : 'PATCH',
       '/api/v1/notifications/${delete ? 'delete' : 'read-noti'}',
       body: {'notificationId': id, 'userId': userId},
     );

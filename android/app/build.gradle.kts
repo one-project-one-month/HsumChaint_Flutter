@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.hsum_chaint"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "29.0.14206865"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

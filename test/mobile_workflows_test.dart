@@ -277,7 +277,7 @@ void main() {
     var read = false;
     var changed = 0;
     final adapter = FakeAdapter((r) {
-      if (r.method == 'PUT') {
+      if (r.method == 'PATCH') {
         read = true;
         return ok(true);
       }
@@ -306,7 +306,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(read, isTrue);
     expect(changed, 1);
-    final request = adapter.requests.singleWhere((r) => r.method == 'PUT');
+    final request = adapter.requests.singleWhere((r) => r.method == 'PATCH');
     expect(request.path, '/api/v1/notifications/read-noti');
     expect(request.data, {'notificationId': 8, 'userId': 7});
   });

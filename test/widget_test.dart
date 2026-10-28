@@ -239,10 +239,11 @@ void main() {
       await repo.donationAction(9, 'delete');
       await repo.notification(12, 7);
       await repo.notification(12, 7, delete: true);
-      expect(adapter.requests[0].method, 'PUT');
+      expect(adapter.requests[0].method, 'POST');
       expect(adapter.requests[0].path, '/api/v1/donations/9/review');
       expect(adapter.requests[1].method, 'DELETE');
       expect(adapter.requests[1].path, '/api/v1/donations/9');
+      expect(adapter.requests[2].method, 'PATCH');
       expect(adapter.requests[2].data, {'notificationId': 12, 'userId': 7});
       expect(adapter.requests[3].method, 'DELETE');
       expect(adapter.requests[3].data, {'notificationId': 12, 'userId': 7});
