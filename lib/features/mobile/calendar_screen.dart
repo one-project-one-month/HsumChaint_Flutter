@@ -271,7 +271,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   if (donations.isEmpty)
-                    emptyMessage('ဤကာလအတွင်း လှူဒါန်းမှု မရှိသေးပါ။'),
+                    const EmptyStateView(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'ဤကာလအတွင်း လှူဒါန်းမှု မရှိသေးပါ',
+                      description: 'ရက်စွဲ သို့မဟုတ် ကျောင်းတိုက် စစ်ထုတ်မှုများကို စစ်ဆေးကြည့်ပါ။',
+                    ),
                   for (final donation in donations)
                     DonationCard(
                       donation: donation,

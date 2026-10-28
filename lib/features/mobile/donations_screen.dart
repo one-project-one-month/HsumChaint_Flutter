@@ -166,7 +166,26 @@ class _DonationsScreenState extends State<DonationsScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 if (result.items.isEmpty)
-                  emptyMessage('လှူဒါန်းမှု မရှိသေးပါ။'),
+                  EmptyStateView(
+                    icon: Icons.volunteer_activism_outlined,
+                    title: 'လှူဒါန်းမှု မှတ်တမ်း မရှိသေးပါ',
+                    description:
+                        'ဆွမ်း သို့မဟုတ် ဝတ္ထုငွေ လှူဒါန်းမှုများကို ဤနေရာတွင် စာရင်းသွင်း ကြည့်ရှုနိုင်ပါသည်။',
+                    actionLabel: widget.user.can('Donation.Create')
+                        ? (widget.user.isMonk ? 'ဆွမ်းစာရင်းသွင်းရန်' : 'လှူဒါန်းရန်')
+                        : null,
+                    onAction: widget.user.can('Donation.Create')
+                        ? () async {
+                            final changed = await showDonationForm(
+                              context,
+                              widget.repo,
+                              widget.user,
+                              widget.mine,
+                            );
+                            if (changed && mounted) _reload();
+                          }
+                        : null,
+                  ),
                 for (final d in result.items)
                   DonationCard(
                     key: ValueKey(d.id),

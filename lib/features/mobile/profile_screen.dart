@@ -37,8 +37,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) => LoadView(
     future: future,
     retry: _reload,
-    builder: (data) => ListView(
-      padding: const EdgeInsets.all(20),
+    builder: (data) => RefreshIndicator(
+      onRefresh: () async {
+        _reload();
+        await future;
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
       children: [
         const CircleAvatar(
           radius: 34,
@@ -132,7 +138,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ],
     ),
-  );
+  ),
+);
   Future<void> _save(Future<void> Function() action) async {
     setState(() => busy = true);
     final ok = await runAction(context, action);

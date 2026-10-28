@@ -126,11 +126,21 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
             ? LoadView(
                 future: invitations,
                 retry: _reload,
-                builder: (result) => ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    if (result.items.isEmpty)
-                      emptyMessage('ဖိတ်ကြားချက် မရှိသေးပါ။'),
+                builder: (result) => RefreshIndicator(
+                  onRefresh: () async {
+                    _reload();
+                    await invitations;
+                  },
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (result.items.isEmpty)
+                        const EmptyStateView(
+                          icon: Icons.mark_email_unread_outlined,
+                          title: 'ဖိတ်ကြားချက် မရှိသေးပါ',
+                          description: 'ကျောင်းတိုက်များမှ အဖွဲ့ဝင် ဖိတ်ကြားလွှာများ မရှိသေးပါ။',
+                        ),
                     for (final invitation in result.items)
                       Card(
                         child: Padding(
@@ -182,7 +192,8 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                     _pager(result.hasNext, result.totalPages),
                   ],
                 ),
-              )
+              ),
+            )
             : LoadView(
                 future: future,
                 retry: _reload,
@@ -196,7 +207,19 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                     padding: const EdgeInsets.all(16),
                     children: [
                       if (result.items.isEmpty)
-                        emptyMessage('ကျောင်းတိုက် မရှိသေးပါ။'),
+                        EmptyStateView(
+                          icon: Icons.temple_buddhist_outlined,
+                          title: section == 1 ? 'မိမိကျောင်းတိုက် မရှိသေးပါ' : 'ကျောင်းတိုက် မတွေ့ရှိပါ',
+                          description: section == 1
+                              ? 'သံဃာတော်များ သို့မဟုတ် ကျောင်းစီမံခန့်ခွဲသူများထံမှ ဖိတ်ခေါ်ချက်ကို စောင့်ဆိုင်းပါ သို့မဟုတ် ကျောင်းတိုက်အသစ် ထည့်သွင်းပါ။'
+                              : 'ကျောင်းတိုက်အမည် သို့မဟုတ် မြို့နယ်ဖြင့် အသစ်ရှာဖွေကြည့်ပါ။',
+                          actionLabel: (section == 1 && widget.user.isMonk && widget.user.can('Monastery.Create'))
+                              ? 'ကျောင်းတိုက်အသစ်'
+                              : null,
+                          onAction: (section == 1 && widget.user.isMonk && widget.user.can('Monastery.Create'))
+                              ? _create
+                              : null,
+                        ),
                       for (final m in result.items) _card(m),
                       _pager(result.hasNext, result.totalPages),
                     ],
@@ -448,10 +471,14 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   if (result.items.isEmpty)
-                    emptyMessage(
-                      monastery.canManage
-                          ? 'အဖွဲ့ဝင် မရှိသေးပါ။'
-                          : 'အဖွဲ့ဝင်စာရင်း ကြည့်ရှုခွင့် မရှိပါ။',
+                    EmptyStateView(
+                      icon: Icons.group_outlined,
+                      title: monastery.canManage
+                          ? 'အဖွဲ့ဝင် မရှိသေးပါ'
+                          : 'အဖွဲ့ဝင်စာရင်း ကြည့်ရှုခွင့် မရှိပါ',
+                      description: monastery.canManage
+                          ? 'ကျောင်းတိုက်အတွက် အဖွဲ့ဝင်သစ်များ ဖိတ်ခေါ်နိုင်ပါသည်။'
+                          : 'ကျောင်းတိုက်စီမံခန့်ခွဲခွင့်ရှိမှသာ အဖွဲ့ဝင်စာရင်းကို ကြည့်ရှုနိုင်ပါသည်။',
                     ),
                   for (final member in result.items)
                     Card(

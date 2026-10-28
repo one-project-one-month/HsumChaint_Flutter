@@ -81,7 +81,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
               children: [
-                if (result.items.isEmpty) emptyMessage('အသိပေးချက် မရှိသေးပါ။'),
+                if (result.items.isEmpty)
+                  const EmptyStateView(
+                    icon: Icons.notifications_none_outlined,
+                    title: 'အသိပေးချက် အသစ် မရှိပါ',
+                    description:
+                        'ဆွမ်းလှူဒါန်းမှုနှင့် ပတ်သက်သည့် အသိပေးချက်များ ရောက်ရှိလာပါက ဤနေရာတွင် ဖော်ပြပေးပါမည်။',
+                  ),
                 for (final n in result.items)
                   Dismissible(
                     key: ValueKey(n['id']),
