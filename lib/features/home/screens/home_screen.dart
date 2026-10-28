@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'လှူဒါန်းမှု',
       'ကျောင်းတိုက်',
       'အသိပေးချက်',
-      'ကိုယ်ရေး',
+      'ပရိုဖိုင်',
     ];
     final icons = [
       Icons.calendar_month_outlined,
@@ -104,7 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          if (widget.tab != 'donations' && widget.tab != 'monasteries' && widget.tab != 'notifications')
+          if (widget.tab != 'donations' &&
+              widget.tab != 'monasteries' &&
+              widget.tab != 'notifications' &&
+              widget.tab != 'profile')
           IconButton(
             tooltip: 'အသိပေးချက်',
             onPressed: () => context.go('/notifications'),
