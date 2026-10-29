@@ -55,40 +55,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(20),
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primaryContainer,
-                    Theme.of(context).colorScheme.surface,
-                  ],
+            Row(
+              children: [
+                const CircleAvatar(
+                  radius: 28,
+                  child: Icon(Icons.person_outline, size: 28),
                 ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _dash(data[0]['name']),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.isMonk ? 'သံဃာတော်' : 'အလှူရှင်',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  const CircleAvatar(
-                    radius: 34,
-                    child: Icon(Icons.person_outline, size: 36),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _dash(data[0]['name']),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    user.isMonk ? 'သံဃာတော်' : 'အလှူရှင်',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+              ],
             ),
             const SizedBox(height: 24),
             const ThemeModeCard(),
@@ -331,18 +325,21 @@ class ThemeModeCard extends StatelessWidget {
         : Get.put(ThemeController(), permanent: true);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.contrast_outlined),
-              title: Text('အသွင်အပြင်'),
-              subtitle: Text('စနစ်အတိုင်း၊ နေ့အလင်း သို့မဟုတ် ညမှောင်'),
+            Text(
+              'အသွင်အပြင်',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 12),
             Obx(
-              () => Column(
+              () => Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   for (final (mode, label, icon) in [
                     (
@@ -353,32 +350,24 @@ class ThemeModeCard extends StatelessWidget {
                     (ThemeMode.light, 'နေ့အလင်း', Icons.light_mode_outlined),
                     (ThemeMode.dark, 'ညမှောင်', Icons.dark_mode_outlined),
                   ])
-                    Semantics(
+                    ChoiceChip(
+                      label: Text(label),
+                      avatar: Icon(icon, size: 18),
                       selected: controller.themeMode == mode,
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(icon),
-                        title: Text(label),
-                        trailing: controller.themeMode == mode
-                            ? Icon(
-                                Icons.check_circle,
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : null,
-                        onTap: () async {
-                          try {
-                            await controller.setThemeMode(mode);
-                          } catch (_) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('အသွင်အပြင် သိမ်း၍ မရသေးပါ။'),
-                                ),
-                              );
-                            }
+                      showCheckmark: false,
+                      onSelected: (_) async {
+                        try {
+                          await controller.setThemeMode(mode);
+                        } catch (_) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('အသွင်အပြင် သိမ်း၍ မရသေးပါ။'),
+                              ),
+                            );
                           }
-                        },
-                      ),
+                        }
+                      },
                     ),
                 ],
               ),

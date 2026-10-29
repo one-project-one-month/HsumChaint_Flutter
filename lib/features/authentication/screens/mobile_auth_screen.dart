@@ -1,3 +1,4 @@
+import '../../../presentation/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -30,17 +31,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 28),
-                  Center(
-                    child: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Icon(
-                        Icons.rice_bowl,
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        size: 32,
-                      ),
-                    ),
-                  ),
+                  const Center(child: AppLogo(size: 88)),
                   const SizedBox(height: 16),
                   Text(
                     'Hsum Chaint (ဆွမ်းချိုင့်)',

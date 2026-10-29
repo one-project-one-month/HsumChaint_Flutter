@@ -1,4 +1,4 @@
-import 'dart:ui' show ImageFilter;
+import '../../../presentation/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -89,48 +89,54 @@ class _HomeScreenState extends State<HomeScreen> {
       Icons.notifications_outlined,
       Icons.person_outline,
     ];
+    final theme = Theme.of(context);
+    final wide = MediaQuery.sizeOf(context).width >= 1000;
+    final selected = index < 0 ? 0 : index;
+    final content = LoadView(
+      future: _mine,
+      retry: _refresh,
+      builder: (mine) => switch (widget.tab) {
+        'donations' => DonationsScreen(
+          repo: repo,
+          user: user,
+          mine: mine,
+          onChanged: _loadUnread,
+        ),
+        'monasteries' => MonasteriesScreen(
+          repo: repo,
+          user: user,
+          mine: mine,
+          onChanged: _refresh,
+        ),
+        'notifications' => NotificationsScreen(
+          repo: repo,
+          userId: int.parse(user.id),
+          onChanged: _loadUnread,
+        ),
+        'profile' => ProfileScreen(repo: repo, auth: auth),
+        _ => CalendarScreen(
+          repo: repo,
+          user: user,
+          mine: mine,
+          onChanged: _loadUnread,
+        ),
+      },
+    );
     return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        toolbarHeight: 80,
-        backgroundColor: Theme.of(
-          context,
-        ).colorScheme.surface.withValues(alpha: .85),
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: const SizedBox.expand(),
-          ),
+        toolbarHeight: 68,
+        titleSpacing: 20,
+        shape: Border(
+          bottom: BorderSide(color: theme.colorScheme.outlineVariant),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Hsum Chaint (ဆွမ်းချိုင့်)',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                '${user.name} · ${user.isMonk ? 'သံဃာတော်' : 'အလှူရှင်'}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-              ),
-            ),
-          ],
-        ),
+        title: const AppHeaderTitle(title: 'ဆွမ်းချိုင့်'),
         actions: [
-          if (widget.tab != 'donations' &&
-              widget.tab != 'monasteries' &&
-              widget.tab != 'notifications' &&
-              widget.tab != 'profile')
+          if (wide)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Text(user.name, style: theme.textTheme.bodyMedium),
+            ),
+          if (widget.tab == 'calendar')
             IconButton(
               tooltip: 'အသိပေးချက်',
               onPressed: () => context.go('/notifications'),
@@ -140,64 +146,116 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Icon(Icons.notifications_outlined),
               ),
             ),
+          const SizedBox(width: 12),
         ],
       ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: LoadView(
-              future: _mine,
-              retry: _refresh,
-              builder: (mine) {
-                return switch (widget.tab) {
-                  'donations' => DonationsScreen(
-                    repo: repo,
-                    user: user,
-                    mine: mine,
-                    onChanged: _loadUnread,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (wide)
+              Container(
+                width: 216,
+                decoration: BoxDecoration(
+                  border: Border(
+                    right: BorderSide(color: theme.colorScheme.outlineVariant),
                   ),
-                  'monasteries' => MonasteriesScreen(
-                    repo: repo,
-                    user: user,
-                    mine: mine,
-                    onChanged: _refresh,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 20),
+                    for (var i = 0; i < tabs.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 3,
+                        ),
+                        child: ListTile(
+                          selected: selected == i,
+                          selectedTileColor: theme.colorScheme.primaryContainer,
+                          selectedColor: theme.colorScheme.onPrimaryContainer,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          leading: Icon(icons[i], size: 22),
+                          title: Text(labels[i]),
+                          onTap: () => context.go('/${tabs[i]}'),
+                        ),
+                      ),
+                    const Spacer(),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            child: Icon(
+                              user.isMonk
+                                  ? Icons.spa_outlined
+                                  : Icons.person_outline,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  user.isMonk ? 'သံဃာတော်' : 'အလှူရှင်',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: widget.tab == 'calendar' ? 1120 : 840,
                   ),
-                  'notifications' => NotificationsScreen(
-                    repo: repo,
-                    userId: int.parse(user.id),
-                    onChanged: _loadUnread,
-                  ),
-                  'profile' => ProfileScreen(repo: repo, auth: auth),
-                  _ => CalendarScreen(
-                    repo: repo,
-                    user: user,
-                    mine: mine,
-                    onChanged: _loadUnread,
-                  ),
-                };
-              },
+                  child: content,
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
-      bottomNavigationBar: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: NavigationBar(
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.surface.withValues(alpha: .85),
-            selectedIndex: index < 0 ? 0 : index,
-            height: 72,
-            onDestinationSelected: (value) => context.go('/${tabs[value]}'),
-            destinations: [
-              for (var i = 0; i < tabs.length; i++)
-                NavigationDestination(icon: Icon(icons[i]), label: labels[i]),
-            ],
-          ),
-        ),
-      ),
+      bottomNavigationBar: wide
+          ? null
+          : DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: theme.colorScheme.outlineVariant),
+                ),
+              ),
+              child: NavigationBar(
+                selectedIndex: selected,
+                onDestinationSelected: (value) => context.go('/${tabs[value]}'),
+                destinations: [
+                  for (var i = 0; i < tabs.length; i++)
+                    NavigationDestination(
+                      icon: Icon(icons[i]),
+                      label: labels[i],
+                    ),
+                ],
+              ),
+            ),
     );
   }
 }

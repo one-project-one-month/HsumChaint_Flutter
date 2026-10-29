@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import '../../data/models/mobile_models.dart';
 
 String dateLabel(DateTime? date) => date == null
     ? 'အချိန် မသတ်မှတ်ရသေးပါ'
@@ -403,4 +404,159 @@ class _TactileFeedbackWrapperState extends State<TactileFeedbackWrapper> {
       ),
     );
   }
+}
+
+/// A consistent page introduction that wraps actions on compact screens.
+class PageHeading extends StatelessWidget {
+  final String title, description;
+  final Widget? action;
+  const PageHeading({
+    super.key,
+    required this.title,
+    required this.description,
+    this.action,
+  });
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final copy = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            description,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      );
+      if (action == null) return copy;
+      if (constraints.maxWidth < 560) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [copy, const SizedBox(height: 16), action!],
+        );
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: copy),
+          const SizedBox(width: 20),
+          action!,
+        ],
+      );
+    },
+  );
+}
+
+Future<(int?, int?)?> showDonationFilters(
+  BuildContext context, {
+  required List<Monastery> monasteries,
+  required int? monasteryId,
+  required int? status,
+  String scopeLabel = 'မိမိ၏ လှူဒါန်းမှုများ',
+}) {
+  var draftMonastery = monasteryId, draftStatus = status;
+  return showModalBottomSheet<(int?, int?)>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (sheetContext) => StatefulBuilder(
+      builder: (context, update) => SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          0,
+          24,
+          24 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'စစ်ထုတ်ရန်',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'ပိတ်ရန်',
+                  onPressed: () => Navigator.pop(sheetContext),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<int>(
+              key: ValueKey('monastery-$draftMonastery'),
+              initialValue: draftMonastery ?? -1,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'ကျောင်းတိုက်'),
+              items: [
+                DropdownMenuItem(
+                  value: -1,
+                  child: Text(scopeLabel, overflow: TextOverflow.ellipsis),
+                ),
+                for (final monastery in monasteries)
+                  DropdownMenuItem(
+                    value: monastery.id,
+                    child: Text(
+                      monastery.name,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: (value) =>
+                  update(() => draftMonastery = value == -1 ? null : value),
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<int>(
+              key: ValueKey('status-$draftStatus'),
+              initialValue: draftStatus ?? -1,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'အခြေအနေ'),
+              items: [
+                const DropdownMenuItem(value: -1, child: Text('အားလုံး')),
+                for (var i = 0; i < donationStatuses.length; i++)
+                  DropdownMenuItem(
+                    value: i,
+                    child: Text(
+                      donationStatuses[i],
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: (value) =>
+                  update(() => draftStatus = value == -1 ? null : value),
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.pop(sheetContext, (draftMonastery, draftStatus)),
+              child: const Text('ရလဒ်များ ပြရန်'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => update(() {
+                draftMonastery = null;
+                draftStatus = null;
+              }),
+              child: const Text('စစ်ထုတ်မှုများ ရှင်းရန်'),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

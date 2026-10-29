@@ -1,3 +1,4 @@
+import '../../presentation/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/mobile_models.dart';
@@ -128,7 +129,7 @@ class _DonationFormState extends State<DonationForm> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('လှူဒါန်းမှု အသစ်')),
+    appBar: AppBar(title: const AppHeaderTitle(title: 'လှူဒါန်းမှု အသစ်')),
     body: SafeArea(
       child: Center(
         child: ConstrainedBox(

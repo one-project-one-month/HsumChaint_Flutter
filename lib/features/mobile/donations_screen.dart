@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/models/mobile_models.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/mobile_repository.dart';
@@ -49,125 +50,98 @@ class _DonationsScreenState extends State<DonationsScreen> {
     widget.onChanged();
   }
 
+  Future<void> _create() async {
+    if (widget.mine.isEmpty) {
+      context.go('/monasteries');
+      return;
+    }
+    final changed = await showDonationForm(
+      context,
+      widget.repo,
+      widget.user,
+      widget.mine,
+    );
+    if (changed && mounted) _reload();
+  }
+
+  Future<void> _filters() async {
+    final result = await showDonationFilters(
+      context,
+      monasteries: widget.mine,
+      monasteryId: monasteryId,
+      status: status,
+      scopeLabel: 'အားလုံး',
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      monasteryId = result.$1;
+      status = result.$2;
+      page = 1;
+      _fetch();
+    });
+  }
+
   @override
   Widget build(BuildContext context) => Column(
     children: [
       Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.user.isMonk
-                        ? 'အလှူစာရင်းများ'
-                        : 'မိမိ၏ လှူဒါန်းမှုများ',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+            PageHeading(
+              title: widget.user.isMonk
+                  ? 'အလှူစာရင်းများ'
+                  : 'မိမိ၏ လှူဒါန်းမှုများ',
+              description: 'အလှူမှတ်တမ်းနှင့် လက်ရှိအခြေအနေများ',
+              action: widget.user.can('Donation.Create')
+                  ? FilledButton.icon(
+                      onPressed: _create,
+                      icon: const Icon(Icons.add, size: 20),
+                      label: Text(
+                        widget.user.isMonk
+                            ? 'ဆွမ်းစာရင်းသွင်းရန်'
+                            : 'လှူဒါန်းရန်',
+                      ),
+                    )
+                  : null,
             ),
-            const SizedBox(height: 14),
-            Row(
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    initialValue: monasteryId,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'ကျောင်းတိုက်',
-                      prefixIcon: const Icon(
-                        Icons.temple_buddhist_outlined,
-                        size: 20,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('အားလုံး', overflow: TextOverflow.ellipsis),
-                      ),
-                      for (final m in widget.mine)
-                        DropdownMenuItem(
-                          value: m.id,
-                          child: Text(m.name, overflow: TextOverflow.ellipsis),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() {
-                      monasteryId = v;
-                      page = 1;
-                      _fetch();
-                    }),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    initialValue: status,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'အခြေအနေ',
-                      prefixIcon: const Icon(Icons.tune_outlined, size: 20),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('အားလုံး', overflow: TextOverflow.ellipsis),
-                      ),
-                      for (var i = 0; i < donationStatuses.length; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          child: Text(
-                            donationStatuses[i],
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() {
-                      status = v;
-                      page = 1;
-                      _fetch();
-                    }),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (widget.user.can('Donation.Create'))
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () async {
-                    final changed = await showDonationForm(
-                      context,
-                      widget.repo,
-                      widget.user,
-                      widget.mine,
-                    );
-                    if (changed && mounted) _reload();
-                  },
-                  icon: const Icon(Icons.add),
+                OutlinedButton.icon(
+                  onPressed: _filters,
+                  icon: const Icon(Icons.tune, size: 18),
                   label: Text(
-                    widget.user.isMonk ? 'ဆွမ်းစာရင်းသွင်းရန်' : 'လှူဒါန်းရန်',
+                    monasteryId != null || status != null
+                        ? 'စစ်ထုတ်ထားသည်'
+                        : 'စစ်ထုတ်ရန်',
                   ),
                 ),
-              ),
+                if (monasteryId != null)
+                  for (final m in widget.mine.where((m) => m.id == monasteryId))
+                    InputChip(
+                      label: Text(m.name),
+                      onDeleted: () => setState(() {
+                        monasteryId = null;
+                        page = 1;
+                        _fetch();
+                      }),
+                    ),
+                if (status != null)
+                  InputChip(
+                    label: Text(donationStatuses[status!]),
+                    onDeleted: () => setState(() {
+                      status = null;
+                      page = 1;
+                      _fetch();
+                    }),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
@@ -190,22 +164,6 @@ class _DonationsScreenState extends State<DonationsScreen> {
                     title: 'လှူဒါန်းမှု မှတ်တမ်း မရှိသေးပါ',
                     description:
                         'ဆွမ်း သို့မဟုတ် ဝတ္ထုငွေ လှူဒါန်းမှုများကို ဤနေရာတွင် စာရင်းသွင်း ကြည့်ရှုနိုင်ပါသည်။',
-                    actionLabel: widget.user.can('Donation.Create')
-                        ? (widget.user.isMonk
-                              ? 'ဆွမ်းစာရင်းသွင်းရန်'
-                              : 'လှူဒါန်းရန်')
-                        : null,
-                    onAction: widget.user.can('Donation.Create')
-                        ? () async {
-                            final changed = await showDonationForm(
-                              context,
-                              widget.repo,
-                              widget.user,
-                              widget.mine,
-                            );
-                            if (changed && mounted) _reload();
-                          }
-                        : null,
                   ),
                 for (final d in result.items)
                   DonationCard(
@@ -294,86 +252,225 @@ class _DonationCardState extends State<DonationCard> {
       if (operate && widget.user.can('Donation.Delete') && d.status != 5)
         'delete': 'ဖျက်ရန်',
     };
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final statusLabel = switch (d.status) {
+      0 => 'မူကြမ်း',
+      1 => 'တင်သွင်းပြီး',
+      2 => 'စောင့်ဆိုင်းဆဲ',
+      3 => 'လက်ခံပြီး',
+      4 => 'အချိန်သတ်မှတ်ပြီး',
+      5 => 'ကပ်လှူပြီး',
+      6 => 'လက်မခံနိုင်ပါ',
+      7 => 'ပယ်ဖျက်ပြီး',
+      _ => d.statusLabel,
+    };
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+    );
     return Card(
-      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 14),
+      elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  d.type == 1
-                      ? Icons.rice_bowl_outlined
-                      : Icons.volunteer_activism_outlined,
-                  size: 22,
-                  color: Theme.of(context).colorScheme.primary,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer.withValues(alpha: .55),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    d.type == 1
+                        ? Icons.rice_bowl_outlined
+                        : Icons.volunteer_activism_outlined,
+                    color: scheme.onPrimaryContainer,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    '${d.typeLabel} · #${d.id}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        d.type == 5 && d.customType.isNotEmpty
+                            ? d.customType
+                            : d.typeLabel,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text('အလှူမှတ်တမ်း #${d.id}', style: muted),
+                    ],
                   ),
                 ),
                 if (busy)
                   const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    width: 48,
+                    height: 48,
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
                   )
                 else
-                  PopupMenuButton<String>(
-                    tooltip: 'လုပ်ဆောင်ချက်များ',
-                    onSelected: _action,
-                    itemBuilder: (_) => actions.entries
-                        .map(
-                          (e) =>
-                              PopupMenuItem(value: e.key, child: Text(e.value)),
-                        )
-                        .toList(),
+                  SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: PopupMenuButton<String>(
+                      tooltip: 'လုပ်ဆောင်ချက်များ',
+                      onSelected: _action,
+                      icon: Icon(
+                        Icons.more_horiz,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      itemBuilder: (_) => actions.entries
+                          .map(
+                            (e) => PopupMenuItem(
+                              value: e.key,
+                              child: Text(e.value),
+                            ),
+                          )
+                          .toList(),
+                    ),
                   ),
               ],
             ),
-            Text(
-              monastery?.name ?? 'ကျောင်းတိုက် အမှတ်စဉ် ${d.monasteryId}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(d.donorName.isEmpty ? 'အလှူရှင်' : d.donorName),
-            if (d.amount != null)
-              Text(
-                '${NumberFormat.decimalPattern().format(d.amount)} ကျပ်',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFeatures: [FontFeature.tabularFigures()],
+            const SizedBox(height: 20),
+            if (d.amount != null) ...[
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: NumberFormat.decimalPattern().format(d.amount),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontFeatures: [const FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' ကျပ်',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            if (d.quantity != null) Text('အရေအတွက်: ${d.quantity}'),
+              const SizedBox(height: 8),
+            ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.person_outline,
+                  size: 17,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    d.donorName.isEmpty ? 'အလှူရှင်' : d.donorName,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
-            StatusBadge(status: d.status, label: d.statusLabel),
-            const SizedBox(height: 6),
-            Text(
-              'ကြိုယူ: ${dateLabel(d.pickup)}',
-              style: const TextStyle(fontSize: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.temple_buddhist_outlined,
+                  size: 17,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    monastery?.name ?? 'ကျောင်းတိုက် အမှတ်စဉ် ${d.monasteryId}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Text(
-              'ပြန်ပို့: ${dateLabel(d.dropoff)}',
-              style: const TextStyle(fontSize: 12),
-            ),
-            if (d.note.isNotEmpty)
+            if (d.quantity != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(d.note),
+                child: Text(
+                  'အရေအတွက်: ${NumberFormat.decimalPattern().format(d.quantity)}',
+                  style: muted,
+                ),
+              ),
+            const SizedBox(height: 18),
+            Divider(height: 1, color: scheme.outlineVariant),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: StatusBadge(status: d.status, label: statusLabel),
+            ),
+            const SizedBox(height: 12),
+            if (d.pickup == null && d.dropoff == null)
+              _scheduleLine(Icons.schedule_outlined, 'အချိန် မသတ်မှတ်ရသေးပါ')
+            else ...[
+              _scheduleLine(Icons.north_east, 'ကြိုယူ: ${dateLabel(d.pickup)}'),
+              const SizedBox(height: 6),
+              _scheduleLine(
+                Icons.south_west,
+                'ပြန်ပို့: ${dateLabel(d.dropoff)}',
+              ),
+            ],
+            if (d.note.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  d.note,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: muted,
+                ),
               ),
           ],
         ),
       ),
     );
   }
+
+  Widget _scheduleLine(IconData icon, String text) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Icon(
+          icon,
+          size: 15,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    ],
+  );
 
   Future<void> _action(String action) async {
     final d = widget.donation;

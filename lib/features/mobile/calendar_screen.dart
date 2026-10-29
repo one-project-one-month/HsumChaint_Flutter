@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/models/mobile_models.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/mobile_repository.dart';
 import 'common.dart';
 import 'donations_screen.dart';
+import 'donation_form.dart';
 
 class CalendarScreen extends StatefulWidget {
   final MobileRepository repo;
@@ -58,202 +60,343 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 
+  Future<void> _filters() async {
+    final result = await showDonationFilters(
+      context,
+      monasteries: widget.mine,
+      monasteryId: monasteryId,
+      status: status,
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      monasteryId = result.$1;
+      status = result.$2;
+      selectedDay = null;
+      _fetch();
+    });
+  }
+
+  void _today() {
+    final now = DateTime.now();
+    setState(() {
+      final changedMonth = month.year != now.year || month.month != now.month;
+      month = DateTime(now.year, now.month);
+      selectedDay = now.day;
+      if (changedMonth) _fetch();
+    });
+  }
+
+  Future<void> _donate() async {
+    if (widget.mine.isEmpty) {
+      context.go('/monasteries');
+      return;
+    }
+    final changed = await showDonationForm(
+      context,
+      widget.repo,
+      widget.user,
+      widget.mine,
+    );
+    if (changed && mounted) _reload();
+  }
+
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-        child: Column(
+  Widget build(BuildContext context) => LoadView(
+    future: _future,
+    retry: _reload,
+    builder: (summary) => LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 820;
+        final donations = summary.days
+            .where((day) => selectedDay == null || day['day'] == selectedDay)
+            .expand(
+              (day) => (day['donations'] as List? ?? []).map(
+                (e) => Donation.fromJson(Json.from(e)),
+              ),
+            )
+            .toList();
+        final scheme = Theme.of(context).colorScheme;
+        final title = widget.user.isMonk
+            ? 'ဆွမ်းအလှူအချိန်ဇယား'
+            : 'ဆွမ်းပြက္ခဒိန်';
+        final calendar = _calendar(summary);
+        final agenda = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    widget.user.isMonk
-                        ? 'ဆွမ်းအလှူအချိန်ဇယား'
-                        : 'ဆွမ်းပြက္ခဒိန်',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    selectedDay == null
+                        ? 'လှူဒါန်းမှုစာရင်း'
+                        : DateFormat('d MMMM').format(
+                            DateTime(month.year, month.month, selectedDay!),
+                          ),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
+                if (selectedDay != null)
+                  TextButton(
+                    onPressed: () => setState(() => selectedDay = null),
+                    child: const Text('ရက်အားလုံး'),
+                  ),
               ],
             ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    initialValue: monasteryId,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'ကျောင်းတိုက်',
-                      prefixIcon: const Icon(
-                        Icons.temple_buddhist_outlined,
-                        size: 20,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text(
-                          'မိမိ၏ လှူဒါန်းမှုများ',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      for (final m in widget.mine)
-                        DropdownMenuItem(
-                          value: m.id,
-                          child: Text(m.name, overflow: TextOverflow.ellipsis),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() {
-                      monasteryId = v;
-                      selectedDay = null;
-                      _fetch();
-                    }),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    initialValue: status,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'အခြေအနေ',
-                      prefixIcon: const Icon(Icons.tune_outlined, size: 20),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    items: [
-                      const DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('အားလုံး', overflow: TextOverflow.ellipsis),
-                      ),
-                      for (var i = 0; i < donationStatuses.length; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          child: Text(
-                            donationStatuses[i],
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() {
-                      status = v;
-                      _fetch();
-                    }),
-                  ),
-                ),
-              ],
+            Text(
+              '${donations.length} ခု',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  tooltip: 'ယခင်လ',
-                  onPressed: () => _shift(-1),
-                  icon: const Icon(Icons.chevron_left),
+            const SizedBox(height: 12),
+            if (donations.isEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
                 ),
-                TextButton(
+                decoration: BoxDecoration(
+                  color: scheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: scheme.outlineVariant),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.event_available_outlined,
+                      size: 32,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'ဤကာလအတွင်း လှူဒါန်းမှု မရှိသေးပါ',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'အခြားရက်ကို ရွေးချယ်၍ ကြည့်ရှုနိုင်ပါသည်။',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+            for (final donation in donations)
+              DonationCard(
+                key: ValueKey(donation.id),
+                donation: donation,
+                repo: widget.repo,
+                user: widget.user,
+                mine: widget.mine,
+                onChanged: _reload,
+              ),
+          ],
+        );
+        return RefreshIndicator(
+          onRefresh: () async {
+            _reload();
+            await _future;
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.all(wide ? 32 : 20),
+            children: [
+              PageHeading(
+                title: title,
+                description: 'နေ့ရက်အလိုက် ဆွမ်းအလှူများကို ကြည့်ရှုစီမံပါ။',
+                action: widget.user.can('Donation.Create')
+                    ? FilledButton.icon(
+                        onPressed: _donate,
+                        icon: const Icon(Icons.add, size: 20),
+                        label: Text(
+                          widget.user.isMonk
+                              ? 'ဆွမ်းစာရင်းသွင်းရန်'
+                              : 'လှူဒါန်းရန်',
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: scheme.outlineVariant),
+                    bottom: BorderSide(color: scheme.outlineVariant),
+                  ),
+                ),
+                child: Wrap(
+                  spacing: 40,
+                  runSpacing: 16,
+                  children: [
+                    _metric('ယခုလ လှူဒါန်းမှု', '${summary.count} ခု'),
+                    _metric(
+                      'စုစုပေါင်း အလှူငွေ',
+                      '${NumberFormat.decimalPattern().format(summary.amount)} ကျပ်',
+                    ),
+                    if (widget.user.isMonk)
+                      _metric(
+                        'လက်ခံရန် စောင့်ဆိုင်းဆဲ',
+                        '${summary.days.expand((d) => d['donations'] as List? ?? []).where((d) => d['status'] == 2).length} ခု',
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _filters,
+                    icon: const Icon(Icons.tune, size: 18),
+                    label: Text(
+                      status != null || monasteryId != null
+                          ? 'စစ်ထုတ်ထားသည်'
+                          : 'စစ်ထုတ်ရန်',
+                    ),
+                  ),
+                  if (monasteryId != null)
+                    for (final m in widget.mine.where(
+                      (m) => m.id == monasteryId,
+                    ))
+                      InputChip(
+                        label: Text(m.name),
+                        onDeleted: () => setState(() {
+                          monasteryId = null;
+                          selectedDay = null;
+                          _fetch();
+                        }),
+                      ),
+                  if (status != null)
+                    InputChip(
+                      label: Text(donationStatuses[status!]),
+                      onDeleted: () => setState(() {
+                        status = null;
+                        _fetch();
+                      }),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (wide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 6, child: calendar),
+                    const SizedBox(width: 28),
+                    Expanded(flex: 5, child: agenda),
+                  ],
+                )
+              else ...[
+                calendar,
+                const SizedBox(height: 24),
+                agenda,
+              ],
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+
+  Widget _metric(String label, String value) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+      const SizedBox(height: 6),
+      Text(
+        value,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.bold,
+          fontFeatures: [const FontFeature.tabularFigures()],
+        ),
+      ),
+    ],
+  );
+
+  Widget _calendar(CalendarSummary summary) {
+    final days = DateTime(month.year, month.month + 1, 0).day;
+    final offset = month.weekday % 7;
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
                   onPressed: () async {
-                    final date = await showDatePicker(
+                    final picked = await showDatePicker(
                       context: context,
                       initialDate: month,
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2100, 12, 31),
                     );
-                    if (date != null && mounted) {
+                    if (picked != null && mounted) {
                       setState(() {
-                        month = DateTime(date.year, date.month);
-                        selectedDay = null;
+                        month = DateTime(picked.year, picked.month);
+                        selectedDay = picked.day;
                         _fetch();
                       });
                     }
                   },
+                  style: TextButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                    foregroundColor: scheme.onSurface,
+                  ),
                   child: Text(
                     DateFormat('MMMM yyyy').format(month),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'နောက်လ',
-                  onPressed: () => _shift(1),
-                  icon: const Icon(Icons.chevron_right),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      Expanded(
-        child: LoadView(
-          future: _future,
-          retry: _reload,
-          builder: (summary) {
-            final days = DateTime(month.year, month.month + 1, 0).day;
-            final offset = month.weekday % 7;
-            final donations = summary.days
-                .where((d) => selectedDay == null || d['day'] == selectedDay)
-                .expand(
-                  (d) => (d['donations'] as List).map(
-                    (e) => Donation.fromJson(Json.from(e)),
-                  ),
-                )
-                .toList();
-            final pending = summary.days
-                .expand((d) => d['donations'] as List)
-                .where((d) => d['status'] == 2)
-                .length;
-            return RefreshIndicator(
-              onRefresh: () async {
-                _reload();
-                await _future;
-              },
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'ယခုလ လှူဒါန်းမှု ${summary.count} ခု',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'စုစုပေါင်း ${NumberFormat.decimalPattern().format(summary.amount)} ကျပ်',
-                          ),
-                          if (widget.user.isMonk)
-                            Text('လက်ခံရန် စောင့်ဆိုင်းဆဲ $pending ခု'),
-                        ],
-                      ),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                ),
+              ),
+              IconButton(
+                tooltip: 'ယခင်လ',
+                onPressed: month.year == 2000 && month.month == 1
+                    ? null
+                    : () => _shift(-1),
+                icon: const Icon(Icons.chevron_left),
+              ),
+              IconButton(
+                tooltip: 'နောက်လ',
+                onPressed: month.year == 2100 && month.month == 12
+                    ? null
+                    : () => _shift(1),
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth / 7;
+              final cellHeight =
+                  MediaQuery.textScalerOf(context).scale(16) + 36;
+              return Column(
+                children: [
                   Row(
                     children: [
-                      for (final d in [
+                      for (final label in [
                         'Sun',
                         'Mon',
                         'Tue',
@@ -263,115 +406,117 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         'Sat',
                       ])
                         Expanded(
-                          child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Text(
-                              d,
-                              style: const TextStyle(fontSize: 11),
+                              label,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
                             ),
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth / 7;
-                      return Wrap(
-                        children: [
-                          for (
-                            var i = 0;
-                            i < ((offset + days + 6) ~/ 7) * 7;
-                            i++
-                          )
-                            SizedBox(
-                              width: width,
-                              height: 52,
-                              child: i < offset || i >= offset + days
-                                  ? null
-                                  : _day(i - offset + 1, summary),
-                            ),
-                        ],
-                      );
-                    },
+                  Wrap(
+                    children: [
+                      for (var i = 0; i < ((offset + days + 6) ~/ 7) * 7; i++)
+                        SizedBox(
+                          width: width,
+                          height: cellHeight,
+                          child: i < offset || i >= offset + days
+                              ? null
+                              : _day(i - offset + 1, summary),
+                        ),
+                    ],
                   ),
-                  if (selectedDay != null)
-                    TextButton(
-                      onPressed: () => setState(() => selectedDay = null),
-                      child: const Text('ရက်အားလုံး ပြန်ပြရန်'),
-                    ),
-                  const Divider(height: 28),
-                  Text(
-                    selectedDay == null
-                        ? 'လှူဒါန်းမှုစာရင်း'
-                        : '$selectedDay ရက်နေ့ လှူဒါန်းမှုများ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  if (donations.isEmpty)
-                    const EmptyStateView(
-                      icon: Icons.calendar_today_outlined,
-                      title: 'ဤကာလအတွင်း လှူဒါန်းမှု မရှိသေးပါ',
-                      description:
-                          'ရွေးချယ်ထားသော ရက်စွဲ သို့မဟုတ် ကျောင်းတိုက်ကို ပြန်လည်စစ်ဆေးကြည့်ပါ။',
-                    ),
-                  for (final donation in donations)
-                    DonationCard(
-                      donation: donation,
-                      repo: widget.repo,
-                      user: widget.user,
-                      mine: widget.mine,
-                      onChanged: _reload,
-                    ),
                 ],
+              );
+            },
+          ),
+          const Divider(height: 24),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: _today,
+                icon: const Icon(Icons.today_outlined, size: 18),
+                label: const Text('ယနေ့'),
               ),
-            );
-          },
-        ),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  'ရက်စွဲကို နှိပ်၍ ကြည့်ရန်',
+                  textAlign: TextAlign.end,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
-    ],
-  );
+    );
+  }
+
   Widget _day(int day, CalendarSummary summary) {
     final count = summary.days
         .where((d) => d['day'] == day)
-        .fold<int>(0, (v, d) => v + (d['donationsCount'] as int));
-    return Padding(
-      padding: const EdgeInsets.all(2),
-      child: Material(
-        color: selectedDay == day
-            ? Theme.of(context).colorScheme.primary
-            : count > 0
-            ? Theme.of(context).colorScheme.primaryContainer
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(24),
-        child: Semantics(
-          button: true,
-          selected: selectedDay == day,
-          label:
-              '${DateFormat.yMMMd().format(DateTime(month.year, month.month, day))} · $count လှူဒါန်းမှု',
+        .fold<int>(
+          0,
+          (v, d) => v + ((d['donationsCount'] as num?)?.toInt() ?? 0),
+        );
+    final today = DateTime.now();
+    final isToday =
+        month.year == today.year &&
+        month.month == today.month &&
+        day == today.day;
+    final selected = selectedDay == day;
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label:
+          '${DateFormat.yMMMd().format(DateTime(month.year, month.month, day))} · $count လှူဒါန်းမှု',
+      excludeSemantics: true,
+      onTap: () => setState(() => selectedDay = selected ? null : day),
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Material(
+          color: selected ? scheme.primary : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isToday && !selected ? scheme.primary : Colors.transparent,
+            ),
+          ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(24),
-            onTap: () =>
-                setState(() => selectedDay = selectedDay == day ? null : day),
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => setState(() => selectedDay = selected ? null : day),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   '$day',
                   style: TextStyle(
-                    color: selectedDay == day
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : null,
+                    color: selected ? scheme.onPrimary : scheme.onSurface,
+                    fontWeight: selected || isToday
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
+                const SizedBox(height: 4),
                 if (count > 0)
-                  Text(
-                    '$count',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: selectedDay == day
-                          ? Theme.of(context).colorScheme.onPrimary
-                          : Theme.of(context).colorScheme.onPrimaryContainer,
+                  Container(
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected ? scheme.onPrimary : scheme.primary,
                     ),
-                  ),
+                  )
+                else
+                  const SizedBox(height: 5),
               ],
             ),
           ),

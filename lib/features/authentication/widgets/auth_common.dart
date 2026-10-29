@@ -1,3 +1,4 @@
+import '../../../presentation/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 
 /// Shared styling used across authentication screens to avoid duplicate
@@ -93,12 +94,7 @@ class AuthLogo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Image.asset(
-          'assets/icons/app_logo.png',
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
-        ),
+        AppLogo(size: size),
         const SizedBox(height: 6),
         const Text(
           'Swam Chaint',

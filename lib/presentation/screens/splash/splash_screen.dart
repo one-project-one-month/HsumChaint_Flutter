@@ -1,3 +1,4 @@
+import '../../widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -57,15 +58,12 @@ class _SplashScreenState extends State<SplashScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset(
-                    'assets/icons/app_logo.png',
-                    width: 220,
-                    height: 220,
-                    fit: BoxFit.contain,
+                  const AppLogo(
+                    size: 220,
                   ).fadeScaleIn(duration: 900.ms, scaleBegin: 0.82),
                   18.h,
                   const Text(
-                    'Swam Chaint',
+                    'Hsum Chaint',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,

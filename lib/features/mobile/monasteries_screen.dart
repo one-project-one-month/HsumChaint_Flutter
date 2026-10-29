@@ -1,3 +1,4 @@
+import '../../presentation/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import '../../data/models/mobile_models.dart';
 import '../../data/models/user_model.dart';
@@ -484,7 +485,7 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
     canPop: !busy,
     child: Scaffold(
       appBar: AppBar(
-        title: Text(monastery.name),
+        title: AppHeaderTitle(title: monastery.name),
         leading: IconButton(
           tooltip: 'နောက်သို့',
           onPressed: busy ? null : () => Navigator.pop(context, changed),
