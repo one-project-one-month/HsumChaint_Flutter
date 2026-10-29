@@ -1,3 +1,4 @@
+import 'package:hsum_chaint/core/navigation/app_router.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -5,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hsum_chaint/data/models/mobile_models.dart';
 import 'package:hsum_chaint/data/models/user_model.dart';
 import 'package:hsum_chaint/data/providers/auth_provider.dart';
@@ -14,6 +16,7 @@ import 'package:hsum_chaint/data/services/api_service.dart';
 import 'package:hsum_chaint/features/authentication/controllers/auth_controller.dart';
 import 'package:hsum_chaint/features/mobile/donation_form.dart';
 import 'package:hsum_chaint/features/mobile/donations_screen.dart';
+import 'package:hsum_chaint/features/mobile/common.dart';
 import 'package:hsum_chaint/main.dart';
 
 class FakeAdapter implements HttpClientAdapter {
@@ -470,5 +473,163 @@ void main() {
     expect(find.text('ဖျက်ရန်'), findsNothing);
     expect(find.text('ပယ်ဖျက်ရန်'), findsNothing);
     expect(find.text('လက်ခံ / ငြင်းပယ်'), findsNothing);
+  });
+
+  test(
+    'session persistence: saves session to shared_preferences and restores on startup',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      Get.put<SharedPreferences>(prefs);
+
+      final api = service(FakeAdapter((_) => ok(true)));
+      Get.put<ApiService>(api);
+      final repo = AuthRepository(AuthProvider());
+      final controller = AuthController(repo);
+      Get.put<AuthController>(controller);
+
+      expect(controller.isAuthenticated, isFalse);
+
+      final testUser = UserModel(
+        id: '42',
+        name: 'Test Donor',
+        roleId: 3,
+        token: 'jwt-access-token',
+        refreshToken: 'jwt-refresh-token',
+        permissions: const ['Donation.Create'],
+      );
+      controller.currentUser.value = testUser;
+
+      final stored = prefs.getString(AuthController.sessionKey);
+      expect(stored, isNotNull);
+      final decoded = jsonDecode(stored!) as Map<String, dynamic>;
+      expect(decoded['id'], 42);
+      expect(decoded['name'], 'Test Donor');
+      expect(decoded['accessToken'], 'jwt-access-token');
+      expect(decoded['refreshToken'], 'jwt-refresh-token');
+
+      // Reset Get and simulate fresh launch
+      Get.reset();
+      Get.put<SharedPreferences>(prefs);
+      Get.put<ApiService>(service(FakeAdapter((_) => ok(true))));
+      final newController = AuthController(repo);
+      Get.put<AuthController>(newController);
+
+      expect(newController.isAuthenticated, isTrue);
+      expect(newController.currentUser.value?.id, '42');
+      expect(newController.currentUser.value?.name, 'Test Donor');
+      expect(newController.currentUser.value?.token, 'jwt-access-token');
+
+      // Test token refresh updates storage
+      Get.find<ApiService>().onTokenRefreshed?.call(
+        'new-access-token',
+        'new-refresh-token',
+      );
+      final updatedStored = prefs.getString(AuthController.sessionKey);
+      final updatedDecoded =
+          jsonDecode(updatedStored!) as Map<String, dynamic>;
+      expect(updatedDecoded['accessToken'], 'new-access-token');
+      expect(updatedDecoded['refreshToken'], 'new-refresh-token');
+
+      // Test clearing session
+      newController.currentUser.value = null;
+      expect(prefs.getString(AuthController.sessionKey), isNull);
+    },
+  );
+
+  testWidgets(
+    'logout shows prompt dialog and confirming clears session from shared_preferences',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({
+        AuthController.sessionKey:
+            '{"id": 42, "name": "Donor", "phoneNumber": "09123", "roleId": 3, "accessToken": "token", "refreshToken": "refresh"}',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      Get.put<SharedPreferences>(prefs);
+      final api = service(FakeAdapter((_) => ok(true)));
+      Get.put<ApiService>(api);
+      final repo = AuthRepository(AuthProvider());
+      final controller = AuthController(repo);
+      Get.put<AuthController>(controller);
+
+      final appRouter = AppRouter(authController: controller);
+      addTearDown(() {
+        appRouter.dispose();
+      });
+
+      await tester.pumpWidget(
+        GetMaterialApp.router(
+          routeInformationProvider: appRouter.router.routeInformationProvider,
+          routeInformationParser: appRouter.router.routeInformationParser,
+          routerDelegate: appRouter.router.routerDelegate,
+          backButtonDispatcher: appRouter.router.backButtonDispatcher,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.isAuthenticated, isTrue);
+      expect(prefs.getString(AuthController.sessionKey), isNotNull);
+
+      controller.logout();
+      await tester.pumpAndSettle();
+
+      expect(find.text('အကောင့်မှ ထွက်မည်'), findsOneWidget);
+      expect(find.text('ထွက်မည်'), findsOneWidget);
+
+      await tester.tap(find.text('ထွက်မည်'));
+      await tester.pumpAndSettle();
+
+      expect(controller.isAuthenticated, isFalse);
+      expect(controller.currentUser.value, isNull);
+      expect(prefs.getString(AuthController.sessionKey), isNull);
+    },
+  );
+
+  testWidgets('LoadView renders ShimmerSkeletonList while loading', (tester) async {
+    final completer = Completer<String>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LoadView<String>(
+            future: completer.future,
+            retry: () {},
+            builder: (data) => Text(data),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(ShimmerSkeletonList), findsOneWidget);
+    expect(find.byType(ShimmerSkeletonCard), findsWidgets);
+
+    completer.complete('Loaded Content');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ShimmerSkeletonList), findsNothing);
+    expect(find.text('Loaded Content'), findsOneWidget);
+  });
+
+  testWidgets('EmptyStateView renders icon, title, description, and optional action', (tester) async {
+    var tapped = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: EmptyStateView(
+            icon: Icons.volunteer_activism_outlined,
+            title: 'လှူဒါန်းမှု မှတ်တမ်း မရှိသေးပါ',
+            description: 'ဆွမ်း သို့မဟုတ် ဝတ္ထုငွေ လှူဒါန်းမှုများကို ဤနေရာတွင် စာရင်းသွင်း ကြည့်ရှုနိုင်ပါသည်။',
+            actionLabel: 'လှူဒါန်းရန်',
+            onAction: () => tapped = true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('လှူဒါန်းမှု မှတ်တမ်း မရှိသေးပါ'), findsOneWidget);
+    expect(find.text('ဆွမ်း သို့မဟုတ် ဝတ္ထုငွေ လှူဒါန်းမှုများကို ဤနေရာတွင် စာရင်းသွင်း ကြည့်ရှုနိုင်ပါသည်။'), findsOneWidget);
+    expect(find.text('လှူဒါန်းရန်'), findsOneWidget);
+
+    await tester.tap(find.text('လှူဒါန်းရန်'));
+    expect(tapped, isTrue);
   });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/authentication/controllers/auth_controller.dart';
 import '../../features/authentication/screens/mobile_auth_screen.dart';
@@ -13,6 +14,7 @@ class AppRouter {
   final AuthController _authController;
   final RouterRefreshNotifier _refreshNotifier;
   late final GoRouter router = GoRouter(
+    navigatorKey: Get.key,
     initialLocation: '/login',
     refreshListenable: _refreshNotifier,
     redirect: (context, state) {

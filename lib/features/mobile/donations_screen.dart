@@ -61,34 +61,34 @@ class _DonationsScreenState extends State<DonationsScreen> {
                 Expanded(
                   child: Text(
                     widget.user.isMonk
-                        ? 'ဆွမ်းစီမံခန့်ခွဲမှု'
+                        ? 'အလှူစာရင်းများ'
                         : 'မိမိ၏ လှူဒါန်းမှုများ',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'ပြန်တင်ရန်',
-                  onPressed: _reload,
-                  icon: const Icon(Icons.refresh),
-                ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     initialValue: monasteryId,
                     isExpanded: true,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'ကျောင်းတိုက်',
+                      prefixIcon: const Icon(Icons.temple_buddhist_outlined, size: 20),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     items: [
                       const DropdownMenuItem<int>(
                         value: null,
-                        child: Text('အားလုံး'),
+                        child: Text('အားလုံး', overflow: TextOverflow.ellipsis),
                       ),
                       for (final m in widget.mine)
                         DropdownMenuItem(
@@ -103,21 +103,28 @@ class _DonationsScreenState extends State<DonationsScreen> {
                     }),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: DropdownButtonFormField<int>(
                     initialValue: status,
                     isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'အခြေအနေ'),
+                    decoration: InputDecoration(
+                      labelText: 'အခြေအနေ',
+                      prefixIcon: const Icon(Icons.tune_outlined, size: 20),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     items: [
                       const DropdownMenuItem<int>(
                         value: null,
-                        child: Text('အားလုံး'),
+                        child: Text('အားလုံး', overflow: TextOverflow.ellipsis),
                       ),
                       for (var i = 0; i < donationStatuses.length; i++)
                         DropdownMenuItem(
                           value: i,
-                          child: Text(donationStatuses[i]),
+                          child: Text(donationStatuses[i], overflow: TextOverflow.ellipsis),
                         ),
                     ],
                     onChanged: (v) => setState(() {
@@ -166,7 +173,26 @@ class _DonationsScreenState extends State<DonationsScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 if (result.items.isEmpty)
-                  emptyMessage('လှူဒါန်းမှု မရှိသေးပါ။'),
+                  EmptyStateView(
+                    icon: Icons.volunteer_activism_outlined,
+                    title: 'လှူဒါန်းမှု မှတ်တမ်း မရှိသေးပါ',
+                    description:
+                        'ဆွမ်း သို့မဟုတ် ဝတ္ထုငွေ လှူဒါန်းမှုများကို ဤနေရာတွင် စာရင်းသွင်း ကြည့်ရှုနိုင်ပါသည်။',
+                    actionLabel: widget.user.can('Donation.Create')
+                        ? (widget.user.isMonk ? 'ဆွမ်းစာရင်းသွင်းရန်' : 'လှူဒါန်းရန်')
+                        : null,
+                    onAction: widget.user.can('Donation.Create')
+                        ? () async {
+                            final changed = await showDonationForm(
+                              context,
+                              widget.repo,
+                              widget.user,
+                              widget.mine,
+                            );
+                            if (changed && mounted) _reload();
+                          }
+                        : null,
+                  ),
                 for (final d in result.items)
                   DonationCard(
                     key: ValueKey(d.id),
@@ -302,7 +328,7 @@ class _DonationCardState extends State<DonationCard> {
               ],
             ),
             Text(
-              monastery?.name ?? 'ကျောင်းတိုက် #${d.monasteryId}',
+              monastery?.name ?? 'ကျောင်းတိုက် အမှတ်စဉ် ${d.monasteryId}',
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 8),
@@ -342,7 +368,7 @@ class _DonationCardState extends State<DonationCard> {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('လှူဒါန်းမှု #${d.id}'),
+          title: Text('အလှူမှတ်တမ်း အမှတ် ${d.id}'),
           content: SizedBox(
             width: 400,
             height: 340,
@@ -444,7 +470,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('လှူဒါန်းမှု စစ်ဆေးရန်'),
+    title: const Text('အလှူမှတ်တမ်း စစ်ဆေးရန်'),
     content: TextField(
       controller: note,
       maxLines: 3,

@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/services/api_service.dart';
@@ -8,8 +10,13 @@ import '../../../presentation/helpers/dialog_helper.dart';
 class AuthController extends GetxController {
   AuthController(this._authRepository);
 
+  static const String sessionKey = 'user_session';
+
   final AuthRepository _authRepository;
   final ApiService _apiService = Get.find<ApiService>();
+
+  SharedPreferences? get _prefs =>
+      Get.isRegistered<SharedPreferences>() ? Get.find<SharedPreferences>() : null;
 
   final RxBool isLoading = false.obs;
   final RxBool isOtpLoading = false.obs;
@@ -19,7 +26,49 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _apiService.onSessionExpired = () => currentUser.value = null;
+
+    // 1. Restore persistent session if present.
+    final raw = _prefs?.getString(sessionKey);
+    if (raw != null) {
+      try {
+        final map = jsonDecode(raw) as Map<String, dynamic>;
+        final user = UserModel.fromJson(map);
+        final userId = int.tryParse(user.id);
+        if (user.token != null && user.refreshToken != null && userId != null) {
+          _apiService.setSession(user.token!, user.refreshToken!, userId);
+        }
+        currentUser.value = user;
+      } catch (_) {
+        _prefs?.remove(sessionKey);
+      }
+    }
+
+    // 2. Automatically synchronize local storage whenever currentUser changes.
+    ever(currentUser, (user) {
+      if (user != null) {
+        _prefs?.setString(sessionKey, jsonEncode(user.toJson()));
+      } else {
+        _prefs?.remove(sessionKey);
+      }
+    });
+
+    // 3. Keep storage synchronized when tokens are refreshed.
+    _apiService.onTokenRefreshed = (newAccess, newRefresh) {
+      final current = currentUser.value;
+      if (current != null) {
+        currentUser.value = UserModel.fromJson({
+          ...current.toJson(),
+          'accessToken': newAccess,
+          'refreshToken': newRefresh,
+        });
+      }
+    };
+
+    // 4. Handle expired session.
+    _apiService.onSessionExpired = () {
+      _prefs?.remove(sessionKey);
+      currentUser.value = null;
+    };
   }
 
   // Inputs
@@ -27,9 +76,6 @@ class AuthController extends GetxController {
   final passwordController = TextEditingController();
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
-
-  // final loginFormKey = GlobalKey<FormState>();
-  // final signupFormKey = GlobalKey<FormState>();
 
   final isPasswordVisible = false.obs;
 
@@ -188,15 +234,18 @@ class AuthController extends GetxController {
 
   void logout() {
     DialogHelper.showPromptDialog(
-      title: 'Logout',
-      description: 'Are you sure you want to log out?',
-      onConfirm: () {
+      title: 'အကောင့်မှ ထွက်မည်',
+      description: 'အကောင့်မှ ထွက်ရန် သေချာပါသလား။',
+      confirmText: 'ထွက်မည်',
+      cancelText: 'မထွက်ပါ',
+      onConfirm: () async {
+        await _prefs?.remove(sessionKey);
         _apiService.clearSession();
         currentUser.value = null;
         clearControllers();
         DialogHelper.showSuccessSnackbar(
-          title: 'Logged Out',
-          message: 'You have been logged out successfully.',
+          title: 'ထွက်ပြီးပါပြီ',
+          message: 'အကောင့်မှ အောင်မြင်စွာ ထွက်ပြီးပါပြီ။',
         );
         // GoRouter redirects guests back to the login route.
       },

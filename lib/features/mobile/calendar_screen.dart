@@ -69,57 +69,80 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.user.isMonk ? 'ဆွမ်းစားပွဲဇယား' : 'ဆွမ်းပြက္ခဒိန်',
+                    widget.user.isMonk ? 'ဆွမ်းအလှူအချိန်ဇယား' : 'ဆွမ်းပြက္ခဒိန်',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'ပြန်တင်ရန်',
-                  onPressed: _reload,
-                  icon: const Icon(Icons.refresh),
-                ),
               ],
             ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<int>(
-              initialValue: monasteryId,
-              decoration: const InputDecoration(labelText: 'ကျောင်းတိုက်'),
-              items: [
-                const DropdownMenuItem<int>(
-                  value: null,
-                  child: Text('မိမိ၏ လှူဒါန်းမှုများ'),
-                ),
-                for (final m in widget.mine)
-                  DropdownMenuItem(
-                    value: m.id,
-                    child: Text(m.name, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    initialValue: monasteryId,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'ကျောင်းတိုက်',
+                      prefixIcon: const Icon(Icons.temple_buddhist_outlined, size: 20),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    items: [
+                      const DropdownMenuItem<int>(
+                        value: null,
+                        child: Text('မိမိ၏ လှူဒါန်းမှုများ', overflow: TextOverflow.ellipsis),
+                      ),
+                      for (final m in widget.mine)
+                        DropdownMenuItem(
+                          value: m.id,
+                          child: Text(m.name, overflow: TextOverflow.ellipsis),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() {
+                      monasteryId = v;
+                      selectedDay = null;
+                      _fetch();
+                    }),
                   ),
-              ],
-              onChanged: (v) => setState(() {
-                monasteryId = v;
-                selectedDay = null;
-                _fetch();
-              }),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<int>(
-              initialValue: status,
-              decoration: const InputDecoration(labelText: 'အခြေအနေ'),
-              items: [
-                const DropdownMenuItem<int>(
-                  value: null,
-                  child: Text('အားလုံး'),
                 ),
-                for (var i = 0; i < donationStatuses.length; i++)
-                  DropdownMenuItem(value: i, child: Text(donationStatuses[i])),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    initialValue: status,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: 'အခြေအနေ',
+                      prefixIcon: const Icon(Icons.tune_outlined, size: 20),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    items: [
+                      const DropdownMenuItem<int>(
+                        value: null,
+                        child: Text('အားလုံး', overflow: TextOverflow.ellipsis),
+                      ),
+                      for (var i = 0; i < donationStatuses.length; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          child: Text(donationStatuses[i], overflow: TextOverflow.ellipsis),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() {
+                      status = v;
+                      _fetch();
+                    }),
+                  ),
+                ),
               ],
-              onChanged: (v) => setState(() {
-                status = v;
-                _fetch();
-              }),
             ),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -155,10 +178,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   icon: const Icon(Icons.chevron_right),
                 ),
               ],
-            ),
-            const Text(
-              'ပြက္ခဒိန်ရက်များကို UTC အချိန်ဖြင့် တွက်ထားပါသည်။',
-              style: TextStyle(fontSize: 11, color: Colors.grey),
             ),
           ],
         ),
@@ -209,7 +228,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             'စုစုပေါင်း ${NumberFormat.decimalPattern().format(summary.amount)} ကျပ်',
                           ),
                           if (widget.user.isMonk)
-                            Text('စစ်ဆေးရန် စောင့်ဆိုင်းဆဲ $pending ခု'),
+                            Text('လက်ခံရန် စောင့်ဆိုင်းဆဲ $pending ခု'),
                         ],
                       ),
                     ),
@@ -261,7 +280,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   if (selectedDay != null)
                     TextButton(
                       onPressed: () => setState(() => selectedDay = null),
-                      child: const Text('ရက်အားလုံး ပြရန်'),
+                      child: const Text('ရက်အားလုံး ပြန်ပြရန်'),
                     ),
                   const Divider(height: 28),
                   Text(
@@ -271,7 +290,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   if (donations.isEmpty)
-                    emptyMessage('ဤကာလအတွင်း လှူဒါန်းမှု မရှိသေးပါ။'),
+                    const EmptyStateView(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'ဤကာလအတွင်း လှူဒါန်းမှု မရှိသေးပါ',
+                      description: 'ရွေးချယ်ထားသော ရက်စွဲ သို့မဟုတ် ကျောင်းတိုက်ကို ပြန်လည်စစ်ဆေးကြည့်ပါ။',
+                    ),
                   for (final donation in donations)
                     DonationCard(
                       donation: donation,

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hsum_chaint/features/authentication/controllers/auth_controller.dart';
 import 'core/bindings/initial_bindings.dart';
 import 'core/navigation/app_router.dart';
 import 'core/theme/app_theme.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  Get.put<SharedPreferences>(prefs, permanent: true);
   runApp(const MyApp());
 }
 

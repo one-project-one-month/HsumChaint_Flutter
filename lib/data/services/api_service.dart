@@ -18,6 +18,8 @@ class ApiService extends GetxService {
   int _sessionVersion = 0;
   Future<void>? _refreshing;
   VoidCallback? onSessionExpired;
+  void Function(String newAccessToken, String newRefreshToken)? onTokenRefreshed;
+
   ApiService({Dio? client})
     : dio =
           client ??
@@ -83,6 +85,7 @@ class ApiService extends GetxService {
         throw const ApiFailure('Session changed.');
       }
       setSession(data['accessToken'], data['refreshToken'], userId!);
+      onTokenRefreshed?.call(data['accessToken'], data['refreshToken']);
     } catch (_) {
       if (version == _sessionVersion) {
         clearSession();

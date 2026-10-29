@@ -6,6 +6,12 @@ import '../authentication/controllers/auth_controller.dart';
 import 'common.dart';
 import 'monasteries_screen.dart';
 
+String _dash(dynamic value) {
+  if (value == null) return '-';
+  final str = value.toString().trim();
+  return str.isEmpty ? '-' : str;
+}
+
 class ProfileScreen extends StatefulWidget {
   final MobileRepository repo;
   final AuthController auth;
@@ -34,11 +40,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _reload() => setState(_fetch);
   @override
-  Widget build(BuildContext context) => LoadView(
-    future: future,
-    retry: _reload,
-    builder: (data) => ListView(
-      padding: const EdgeInsets.all(20),
+  Widget build(BuildContext context) {
+    return LoadView(
+      future: future,
+      retry: _reload,
+      builder: (data) => RefreshIndicator(
+      onRefresh: () async {
+        _reload();
+        await future;
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
       children: [
         const CircleAvatar(
           radius: 34,
@@ -46,7 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          data[0]['name'] ?? '',
+          _dash(data[0]['name']),
           textAlign: TextAlign.center,
           style: Theme.of(
             context,
@@ -61,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               ListTile(
-                title: const Text('ကိုယ်ရေးအချက်အလက်'),
+                title: const Text('ပရိုဖိုင်အချက်အလက်'),
                 trailing: IconButton(
                   tooltip: 'ပြင်ဆင်ရန်',
                   onPressed: busy ? null : () => _editProfile(data[0]),
@@ -70,15 +83,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               ListTile(
                 title: const Text('ဖုန်းနံပါတ်'),
-                subtitle: Text(data[0]['phoneNumber'] ?? ''),
+                subtitle: Text(_dash(data[0]['phoneNumber'])),
               ),
               ListTile(
                 title: const Text('အီးမေးလ်'),
-                subtitle: Text(data[0]['email'] ?? '—'),
+                subtitle: Text(_dash(data[0]['email'])),
               ),
               ListTile(
                 title: const Text('ဆက်သွယ်ရန်ဖုန်း'),
-                subtitle: Text(data[0]['contactPhoneNumber'] ?? '—'),
+                subtitle: Text(_dash(data[0]['contactPhoneNumber'])),
               ),
             ],
           ),
@@ -96,8 +109,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 ListTile(
-                  title: Text(data[2]['monasteryName'] ?? ''),
-                  subtitle: Text(data[2]['monasteryAddress'] ?? ''),
+                  title: const Text('ကျောင်းတိုက်အမည်'),
+                  subtitle: Text(_dash(data[2]['monasteryName'])),
+                ),
+                ListTile(
+                  title: const Text('လိပ်စာ'),
+                  subtitle: Text(_dash(data[2]['monasteryAddress'])),
                 ),
               ],
             ),
@@ -132,7 +149,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ],
     ),
-  );
+  ),
+);
+  }
   Future<void> _save(Future<void> Function() action) async {
     setState(() => busy = true);
     final ok = await runAction(context, action);
@@ -146,7 +165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _editProfile(Json initial) async {
     final body = await editFields(
       context,
-      'ကိုယ်ရေးအချက်အလက်',
+      'ပရိုဖိုင်အချက်အလက်',
       {
         'name': 'အမည်',
         'phoneNumber': 'ဖုန်းနံပါတ်',
