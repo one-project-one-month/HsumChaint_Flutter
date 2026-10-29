@@ -40,10 +40,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _reload() => setState(_fetch);
   @override
-  Widget build(BuildContext context) => LoadView(
-    future: future,
-    retry: _reload,
-    builder: (data) => RefreshIndicator(
+  Widget build(BuildContext context) {
+    return LoadView(
+      future: future,
+      retry: _reload,
+      builder: (data) => RefreshIndicator(
       onRefresh: () async {
         _reload();
         await future;
@@ -150,6 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ),
   ),
 );
+  }
   Future<void> _save(Future<void> Function() action) async {
     setState(() => busy = true);
     final ok = await runAction(context, action);

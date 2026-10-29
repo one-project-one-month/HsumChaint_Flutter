@@ -236,8 +236,10 @@ class AuthController extends GetxController {
     DialogHelper.showPromptDialog(
       title: 'အကောင့်မှ ထွက်မည်',
       description: 'အကောင့်မှ ထွက်ရန် သေချာပါသလား။',
-      onConfirm: () {
-        _prefs?.remove(sessionKey);
+      confirmText: 'ထွက်မည်',
+      cancelText: 'မထွက်ပါ',
+      onConfirm: () async {
+        await _prefs?.remove(sessionKey);
         _apiService.clearSession();
         currentUser.value = null;
         clearControllers();

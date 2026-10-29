@@ -1,3 +1,4 @@
+import 'package:hsum_chaint/core/navigation/app_router.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -532,6 +533,54 @@ void main() {
 
       // Test clearing session
       newController.currentUser.value = null;
+      expect(prefs.getString(AuthController.sessionKey), isNull);
+    },
+  );
+
+  testWidgets(
+    'logout shows prompt dialog and confirming clears session from shared_preferences',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({
+        AuthController.sessionKey:
+            '{"id": 42, "name": "Donor", "phoneNumber": "09123", "roleId": 3, "accessToken": "token", "refreshToken": "refresh"}',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      Get.put<SharedPreferences>(prefs);
+      final api = service(FakeAdapter((_) => ok(true)));
+      Get.put<ApiService>(api);
+      final repo = AuthRepository(AuthProvider());
+      final controller = AuthController(repo);
+      Get.put<AuthController>(controller);
+
+      final appRouter = AppRouter(authController: controller);
+      addTearDown(() {
+        appRouter.dispose();
+      });
+
+      await tester.pumpWidget(
+        GetMaterialApp.router(
+          routeInformationProvider: appRouter.router.routeInformationProvider,
+          routeInformationParser: appRouter.router.routeInformationParser,
+          routerDelegate: appRouter.router.routerDelegate,
+          backButtonDispatcher: appRouter.router.backButtonDispatcher,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.isAuthenticated, isTrue);
+      expect(prefs.getString(AuthController.sessionKey), isNotNull);
+
+      controller.logout();
+      await tester.pumpAndSettle();
+
+      expect(find.text('အကောင့်မှ ထွက်မည်'), findsOneWidget);
+      expect(find.text('ထွက်မည်'), findsOneWidget);
+
+      await tester.tap(find.text('ထွက်မည်'));
+      await tester.pumpAndSettle();
+
+      expect(controller.isAuthenticated, isFalse);
+      expect(controller.currentUser.value, isNull);
       expect(prefs.getString(AuthController.sessionKey), isNull);
     },
   );
