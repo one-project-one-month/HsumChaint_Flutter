@@ -197,7 +197,7 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                                 ),
                               ),
                               Text(
-                                'အခန်းကဏ္ဍ: ${invitation['spaceRoleName'] ?? spaceRoles[invitation['spaceRoleId']] ?? ''}',
+                                'တာဝန်အဆင့်: ${invitation['spaceRoleName'] ?? spaceRoles[invitation['spaceRoleId']] ?? ''}',
                               ),
                               Text(
                                 'ဖိတ်ကြားသူ: ${invitation['invitedByName'] ?? ''}',
@@ -546,11 +546,11 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
                                 itemBuilder: (_) => const [
                                   PopupMenuItem(
                                     value: 'role',
-                                    child: Text('အခန်းကဏ္ဍပြောင်းရန်'),
+                                    child: Text('တာဝန်အဆင့် ပြောင်းလဲရန်'),
                                   ),
                                   PopupMenuItem(
                                     value: 'remove',
-                                    child: Text('အဖွဲ့ဝင်ဖယ်ရန်'),
+                                    child: Text('အဖွဲ့ဝင်စာရင်းမှ ပယ်ဖျက်မည်'),
                                   ),
                                 ],
                               )
@@ -637,7 +637,7 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
   }
 
   Future<void> _delete() async {
-    if (!await confirmAction(context, 'ကျောင်းတိုက်ကို ဖျက်ရန်') || !mounted) {
+    if (!await confirmAction(context, 'ကျောင်းတိုက်အား အပြီးတိုင် ဖျက်မည်') || !mounted) {
       return;
     }
     setState(() => busy = true);
@@ -666,7 +666,7 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
 
   Future<void> _memberAction(Json member, String action) async {
     if (action == 'remove') {
-      if (!await confirmAction(context, 'အဖွဲ့ဝင်ဖယ်ရန်') || !mounted) return;
+      if (!await confirmAction(context, 'အဖွဲ့ဝင်စာရင်းမှ ပယ်ဖျက်မည်') || !mounted) return;
       await _mutate(() async {
         await widget.repo.call(
           'DELETE',
@@ -677,7 +677,7 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
       final role = await showDialog<int>(
         context: context,
         builder: (context) => SimpleDialog(
-          title: const Text('အခန်းကဏ္ဍရွေးရန်'),
+          title: const Text('တာဝန်အဆင့် ရွေးချယ်ရန်'),
           children: [
             for (final entry in spaceRoles.entries.where((e) => e.key != 1))
               SimpleDialogOption(
@@ -764,7 +764,7 @@ class _FieldsDialogState extends State<_FieldsDialog> {
                     validator: (v) =>
                         widget.requiredKeys.contains(key) &&
                             v?.trim().isEmpty != false
-                        ? 'ဖြည့်ပေးပါ။'
+                        ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။'
                         : null,
                   ),
                 ),
@@ -821,12 +821,12 @@ class _InviteDialogState extends State<_InviteDialog> {
             controller: phone,
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(labelText: 'ဖုန်းနံပါတ်'),
-            validator: (v) => v?.trim().isEmpty != false ? 'ဖြည့်ပေးပါ။' : null,
+            validator: (v) => v?.trim().isEmpty != false ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။' : null,
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<int>(
             initialValue: role,
-            decoration: const InputDecoration(labelText: 'အခန်းကဏ္ဍ'),
+            decoration: const InputDecoration(labelText: 'တာဝန်အဆင့်'),
             items: [
               for (final entry in spaceRoles.entries.where((e) => e.key != 1))
                 DropdownMenuItem(value: entry.key, child: Text(entry.value)),

@@ -328,7 +328,7 @@ class _DonationCardState extends State<DonationCard> {
               ],
             ),
             Text(
-              monastery?.name ?? 'ကျောင်းတိုက် #${d.monasteryId}',
+              monastery?.name ?? 'ကျောင်းတိုက် အမှတ်စဉ် ${d.monasteryId}',
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 8),
@@ -368,7 +368,7 @@ class _DonationCardState extends State<DonationCard> {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('လှူဒါန်းမှု #${d.id}'),
+          title: Text('အလှူမှတ်တမ်း အမှတ် ${d.id}'),
           content: SizedBox(
             width: 400,
             height: 340,
@@ -470,7 +470,7 @@ class _ReviewDialogState extends State<_ReviewDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('လှူဒါန်းမှု စစ်ဆေးရန်'),
+    title: const Text('အလှူမှတ်တမ်း စစ်ဆေးရန်'),
     content: TextField(
       controller: note,
       maxLines: 3,

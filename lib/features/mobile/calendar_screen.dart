@@ -228,7 +228,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             'စုစုပေါင်း ${NumberFormat.decimalPattern().format(summary.amount)} ကျပ်',
                           ),
                           if (widget.user.isMonk)
-                            Text('စစ်ဆေးရန် စောင့်ဆိုင်းဆဲ $pending ခု'),
+                            Text('လက်ခံရန် စောင့်ဆိုင်းဆဲ $pending ခု'),
                         ],
                       ),
                     ),
@@ -280,7 +280,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   if (selectedDay != null)
                     TextButton(
                       onPressed: () => setState(() => selectedDay = null),
-                      child: const Text('ရက်အားလုံး ပြရန်'),
+                      child: const Text('ရက်အားလုံး ပြန်ပြရန်'),
                     ),
                   const Divider(height: 28),
                   Text(
@@ -293,7 +293,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     const EmptyStateView(
                       icon: Icons.calendar_today_outlined,
                       title: 'ဤကာလအတွင်း လှူဒါန်းမှု မရှိသေးပါ',
-                      description: 'ရက်စွဲ သို့မဟုတ် ကျောင်းတိုက် စစ်ထုတ်မှုများကို စစ်ဆေးကြည့်ပါ။',
+                      description: 'ရွေးချယ်ထားသော ရက်စွဲ သို့မဟုတ် ကျောင်းတိုက်ကို ပြန်လည်စစ်ဆေးကြည့်ပါ။',
                     ),
                   for (final donation in donations)
                     DonationCard(

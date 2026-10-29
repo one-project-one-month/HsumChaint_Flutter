@@ -100,7 +100,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                     decoration: InputDecoration(
                       labelText: 'စကားဝှက်',
                       suffixIcon: IconButton(
-                        tooltip: 'စကားဝှက် ပြ/ဝှက်',
+                        tooltip: 'စကားဝှက် ပြမည် / ဝှက်မည်',
                         icon: Icon(
                           _obscure
                               ? Icons.visibility_outlined
@@ -110,7 +110,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                       ),
                     ),
                     validator: (v) =>
-                        v == null || v.isEmpty ? 'ဖြည့်ပေးပါ။' : null,
+                        v == null || v.isEmpty ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။' : null,
                   ),
                   const SizedBox(height: 16),
                   if (widget.register) ...[
@@ -121,7 +121,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                         labelText: 'စကားဝှက် အတည်ပြုရန်',
                       ),
                       validator: (v) => v != auth.passwordController.text
-                          ? 'စကားဝှက် မတူပါ။'
+                          ? 'စကားဝှက်နှစ်ခု တူညီမှု မရှိပါ။'
                           : null,
                     ),
                     const SizedBox(height: 16),
@@ -186,7 +186,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
       keyboardType: keyboard,
       decoration: InputDecoration(labelText: label),
       validator: (v) =>
-          required && (v == null || v.trim().isEmpty) ? 'ဖြည့်ပေးပါ။' : null,
+          required && (v == null || v.trim().isEmpty) ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။' : null,
     ),
   );
 

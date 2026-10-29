@@ -77,7 +77,7 @@ class ShimmerSkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'ဒေတာ ဆွဲတင်နေပါသည်',
+    label: 'အချက်အလက်များ ရယူနေပါသည်...',
     container: true,
     child: ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
@@ -230,7 +230,7 @@ class LoadView<T> extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'အချက်အလက် ရယူ၍ မရပါ',
+                    'အချက်အလက် ရယူ၍ မရသေးပါ',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -245,7 +245,7 @@ class LoadView<T> extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: retry,
                     icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('ပြန်လည်ကြိုးစားမည်'),
+                    label: const Text('ပြန်လည် ကြိုးစားမည်'),
                   ),
                 ],
               ),

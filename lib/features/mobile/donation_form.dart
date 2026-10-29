@@ -207,17 +207,17 @@ class _DonationFormState extends State<DonationForm> {
                       validator: (v) =>
                           donorId.text.trim().isEmpty &&
                               v?.trim().isEmpty != false
-                          ? 'အမည် သို့မဟုတ် User ID ဖြည့်ပါ။'
+                          ? 'အလှူရှင် အမည် သို့မဟုတ် အကောင့်နံပါတ် ဖြည့်ပါ။'
                           : null,
                     ),
                     _field(
-                      'အလှူရှင် User ID (အကောင့်ရှိပါက)',
+                      'အလှူရှင် အကောင့်နံပါတ် (ရှိပါက)',
                       donorId,
                       number: true,
                       validator: (v) =>
                           v == null || v.isEmpty || (int.tryParse(v) ?? 0) > 0
                           ? null
-                          : 'မှန်ကန်သော ID ဖြည့်ပါ။',
+                          : 'မှန်ကန်သော အကောင့်နံပါတ် ဖြည့်ပါ။',
                     ),
                   ],
                   _field(
@@ -478,7 +478,7 @@ class _DonationFormState extends State<DonationForm> {
         ].any((c) => c.text.trim().isNotEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ဖြည့်ထားသောအလှူကို အစုလိုက်စာရင်းထဲ အရင်ထည့်ပေးပါ။'),
+          content: Text('ဖြည့်စွက်ထားသော အလှူကို စာရင်းထဲသို့ အရင်ထည့်သွင်းပေးပါ။'),
         ),
       );
       return;
