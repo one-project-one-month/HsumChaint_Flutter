@@ -25,7 +25,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       center: Alignment(0, 1.4), // bottom
       radius: 1.15,
       colors: [_glowColor, Color(0x66F6C06B), Color(0x00F6C06B)],
-      stops: [0.2, 0.75, 1.0], // ✅ fixed (must be <= 1)
+      stops: [0.2, 0.75, 1.0], // Gradient stops must be <= 1.
     ),
   );
 

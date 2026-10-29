@@ -5,6 +5,7 @@ import 'package:hsum_chaint/features/authentication/controllers/auth_controller.
 import 'core/bindings/initial_bindings.dart';
 import 'core/navigation/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +32,10 @@ class _MyAppState extends State<MyApp> {
       InitialBindings().dependencies();
     }
 
+    if (!Get.isRegistered<ThemeController>()) {
+      Get.put(ThemeController(), permanent: true);
+    }
+
     _appRouter = AppRouter(authController: Get.find<AuthController>());
   }
 
@@ -44,16 +49,18 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     final router = _appRouter.router;
 
-    return GetMaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Hsum Chaint',
-      theme: AppTheme.lightTheme,
-      //   darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      routeInformationProvider: router.routeInformationProvider,
-      routeInformationParser: router.routeInformationParser,
-      routerDelegate: router.routerDelegate,
-      backButtonDispatcher: router.backButtonDispatcher,
+    return Obx(
+      () => GetMaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        title: 'Hsum Chaint',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: Get.find<ThemeController>().themeMode,
+        routeInformationProvider: router.routeInformationProvider,
+        routeInformationParser: router.routeInformationParser,
+        routerDelegate: router.routerDelegate,
+        backButtonDispatcher: router.backButtonDispatcher,
+      ),
     );
   }
 }

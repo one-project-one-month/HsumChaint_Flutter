@@ -30,13 +30,13 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 28),
-                  const Center(
+                  Center(
                     child: CircleAvatar(
                       radius: 30,
-                      backgroundColor: Color(0xFF18181B),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       child: Icon(
                         Icons.rice_bowl,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         size: 32,
                       ),
                     ),
@@ -109,8 +109,9 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။' : null,
+                    validator: (v) => v == null || v.isEmpty
+                        ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   if (widget.register) ...[
@@ -185,8 +186,9 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
       controller: controller,
       keyboardType: keyboard,
       decoration: InputDecoration(labelText: label),
-      validator: (v) =>
-          required && (v == null || v.trim().isEmpty) ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။' : null,
+      validator: (v) => required && (v == null || v.trim().isEmpty)
+          ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။'
+          : null,
     ),
   );
 

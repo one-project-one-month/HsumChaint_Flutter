@@ -27,13 +27,24 @@ Future<bool> showDonationForm(
   List<Monastery> mine, {
   Monastery? selected,
 }) async =>
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => DonationForm(
-          repo: repo,
-          user: user,
-          mine: mine,
-          selected: selected,
+    await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: false,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => FractionallySizedBox(
+        heightFactor: .94,
+        child: ScaffoldMessenger(
+          child: DonationForm(
+            repo: repo,
+            user: user,
+            mine: mine,
+            selected: selected,
+          ),
         ),
       ),
     ) ??
@@ -275,9 +286,12 @@ class _DonationFormState extends State<DonationForm> {
                             : null;
                       },
                     ),
-                    const Text(
+                    Text(
                       'ရွေးထားသည့်ရက် မရှိသောလတွင် လ၏နောက်ဆုံးရက်ကို သုံးပါမည်။',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     _timeTile('ကြိုယူချိန်', pickupTime, (t) => pickupTime = t),
                     _timeTile(
@@ -478,7 +492,9 @@ class _DonationFormState extends State<DonationForm> {
         ].any((c) => c.text.trim().isNotEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ဖြည့်စွက်ထားသော အလှူကို စာရင်းထဲသို့ အရင်ထည့်သွင်းပေးပါ။'),
+          content: Text(
+            'ဖြည့်စွက်ထားသော အလှူကို စာရင်းထဲသို့ အရင်ထည့်သွင်းပေးပါ။',
+          ),
         ),
       );
       return;

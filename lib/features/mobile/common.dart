@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 
@@ -13,9 +14,9 @@ class ShimmerSkeletonCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disableMotion = MediaQuery.of(context).disableAnimations;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.grey.shade800 : const Color(0xFFE4E4E7);
-    final highlightColor = isDark ? Colors.grey.shade700 : const Color(0xFFF4F4F5);
+    final scheme = Theme.of(context).colorScheme;
+    final baseColor = scheme.primaryContainer;
+    final highlightColor = scheme.surface;
 
     Widget box({double? width, double height = 14, double radius = 6}) =>
         Container(
@@ -63,10 +64,7 @@ class ShimmerSkeletonCard extends StatelessWidget {
 
     return card
         .animate(onPlay: (controller) => controller.repeat())
-        .shimmer(
-          duration: 1200.ms,
-          color: highlightColor,
-        );
+        .shimmer(duration: 1200.ms, color: highlightColor);
   }
 }
 
@@ -109,7 +107,7 @@ class EmptyStateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final scheme = theme.colorScheme;
 
     return Semantics(
       container: true,
@@ -125,17 +123,11 @@ class EmptyStateView extends StatelessWidget {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5),
+                    color: scheme.primaryContainer,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7),
-                    ),
+                    border: Border.all(color: scheme.outlineVariant),
                   ),
-                  child: Icon(
-                    icon,
-                    size: 34,
-                    color: isDark ? Colors.grey.shade400 : const Color(0xFF71717A),
-                  ),
+                  child: Icon(icon, size: 34, color: scheme.onPrimaryContainer),
                 ),
                 const SizedBox(height: 18),
                 Text(
@@ -151,7 +143,7 @@ class EmptyStateView extends StatelessWidget {
                     description!,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF71717A),
+                      color: scheme.onSurfaceVariant,
                       height: 1.4,
                     ),
                   ),
@@ -177,12 +169,7 @@ Widget emptyMessage(
   String text, {
   IconData icon = Icons.inbox_outlined,
   String? description,
-}) =>
-    EmptyStateView(
-      icon: icon,
-      title: text,
-      description: description,
-    );
+}) => EmptyStateView(icon: icon, title: text, description: description);
 
 class LoadView<T> extends StatelessWidget {
   final Future<T> future;
@@ -206,7 +193,7 @@ class LoadView<T> extends StatelessWidget {
         return skeleton?.call() ?? const ShimmerSkeletonList();
       }
       if (snapshot.hasError) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final scheme = Theme.of(context).colorScheme;
         return Center(
           child: Padding(
             padding: const EdgeInsets.all(28),
@@ -219,13 +206,13 @@ class LoadView<T> extends StatelessWidget {
                     width: 68,
                     height: 68,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF27272A) : const Color(0xFFFEE2E2),
+                      color: scheme.errorContainer,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.cloud_off_outlined,
                       size: 34,
-                      color: isDark ? Colors.red.shade300 : Colors.red.shade700,
+                      color: scheme.onErrorContainer,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -239,7 +226,10 @@ class LoadView<T> extends StatelessWidget {
                   Text(
                     snapshot.error.toString(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF71717A)),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   FilledButton.icon(
@@ -321,4 +311,96 @@ Future<DateTime?> pickDateTime(
   );
   if (time == null) return null;
   return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+}
+
+/// Uses the backend donation status values.
+class StatusBadge extends StatelessWidget {
+  final int status;
+  final String label;
+  const StatusBadge({super.key, required this.status, required this.label});
+  @override
+  Widget build(BuildContext context) {
+    final (background, foreground, border) = switch (status) {
+      2 => (
+        const Color(0xFFFEF3C7),
+        const Color(0xFF92400E),
+        const Color(0xFFFDE68A),
+      ),
+      3 => (
+        const Color(0xFFECFDF5),
+        const Color(0xFF065F46),
+        const Color(0xFFA7F3D0),
+      ),
+      4 || 5 => (
+        const Color(0xFFEFF6FF),
+        const Color(0xFF1E40AF),
+        const Color(0xFFBFDBFE),
+      ),
+      6 || 7 => (
+        const Color(0xFFFEE2E2),
+        const Color(0xFF991B1B),
+        const Color(0xFFFECACA),
+      ),
+      _ => (
+        Theme.of(context).colorScheme.primaryContainer,
+        Theme.of(context).colorScheme.onPrimaryContainer,
+        Theme.of(context).colorScheme.outlineVariant,
+      ),
+    };
+    return Semantics(
+      label: label,
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: background,
+          border: Border.all(color: border),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(color: foreground, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+}
+
+/// Native buttons retain keyboard activation and accessibility semantics.
+class TactileFeedbackWrapper extends StatefulWidget {
+  final Widget child;
+  final bool enabled;
+  const TactileFeedbackWrapper({
+    super.key,
+    required this.child,
+    this.enabled = true,
+  });
+  @override
+  State<TactileFeedbackWrapper> createState() => _TactileFeedbackWrapperState();
+}
+
+class _TactileFeedbackWrapperState extends State<TactileFeedbackWrapper> {
+  bool pressed = false;
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return Listener(
+      onPointerDown: widget.enabled
+          ? (_) {
+              HapticFeedback.lightImpact();
+              setState(() => pressed = true);
+            }
+          : null,
+      onPointerUp: (_) => setState(() => pressed = false),
+      onPointerCancel: (_) => setState(() => pressed = false),
+      child: AnimatedScale(
+        scale: pressed && widget.enabled && !reduceMotion ? .97 : 1,
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 100),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
 }

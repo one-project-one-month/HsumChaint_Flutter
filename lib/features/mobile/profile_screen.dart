@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../core/theme/theme_controller.dart';
 import '../../data/models/mobile_models.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/mobile_repository.dart';
@@ -45,113 +47,134 @@ class _ProfileScreenState extends State<ProfileScreen> {
       future: future,
       retry: _reload,
       builder: (data) => RefreshIndicator(
-      onRefresh: () async {
-        _reload();
-        await future;
-      },
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
-      children: [
-        const CircleAvatar(
-          radius: 34,
-          child: Icon(Icons.person_outline, size: 36),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          _dash(data[0]['name']),
-          textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        Text(
-          user.isMonk ? 'သံဃာတော်' : 'အလှူရှင်',
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 24),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                title: const Text('ပရိုဖိုင်အချက်အလက်'),
-                trailing: IconButton(
-                  tooltip: 'ပြင်ဆင်ရန်',
-                  onPressed: busy ? null : () => _editProfile(data[0]),
-                  icon: const Icon(Icons.edit_outlined),
+        onRefresh: () async {
+          _reload();
+          await future;
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).colorScheme.primaryContainer,
+                    Theme.of(context).colorScheme.surface,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
-              ListTile(
-                title: const Text('ဖုန်းနံပါတ်'),
-                subtitle: Text(_dash(data[0]['phoneNumber'])),
-              ),
-              ListTile(
-                title: const Text('အီးမေးလ်'),
-                subtitle: Text(_dash(data[0]['email'])),
-              ),
-              ListTile(
-                title: const Text('ဆက်သွယ်ရန်ဖုန်း'),
-                subtitle: Text(_dash(data[0]['contactPhoneNumber'])),
-              ),
-            ],
-          ),
-        ),
-        if (user.isMonk)
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  title: const Text('သံဃာတော်၏ ကျောင်းတိုက်'),
-                  trailing: IconButton(
-                    tooltip: 'ကျောင်းတိုက်အချက်အလက်ပြင်ရန်',
-                    onPressed: busy ? null : () => _editMonk(data[2]),
-                    icon: const Icon(Icons.edit_outlined),
+              child: Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 34,
+                    child: Icon(Icons.person_outline, size: 36),
                   ),
-                ),
-                ListTile(
-                  title: const Text('ကျောင်းတိုက်အမည်'),
-                  subtitle: Text(_dash(data[2]['monasteryName'])),
-                ),
-                ListTile(
-                  title: const Text('လိပ်စာ'),
-                  subtitle: Text(_dash(data[2]['monasteryAddress'])),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Text(
+                    _dash(data[0]['name']),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    user.isMonk ? 'သံဃာတော်' : 'အလှူရှင်',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
-          ),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                title: const Text('ပို့ဆောင်ချိန်နှင့် အသိပေးချိန်'),
-                trailing: IconButton(
-                  tooltip: 'အချိန်ပြင်ရန်',
-                  onPressed: busy ? null : () => _editSettings(data[1]),
-                  icon: const Icon(Icons.edit_outlined),
+            const SizedBox(height: 24),
+            const ThemeModeCard(),
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    title: const Text('ပရိုဖိုင်အချက်အလက်'),
+                    trailing: IconButton(
+                      tooltip: 'ပြင်ဆင်ရန်',
+                      onPressed: busy ? null : () => _editProfile(data[0]),
+                      icon: const Icon(Icons.edit_outlined),
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text('ဖုန်းနံပါတ်'),
+                    subtitle: Text(_dash(data[0]['phoneNumber'])),
+                  ),
+                  ListTile(
+                    title: const Text('အီးမေးလ်'),
+                    subtitle: Text(_dash(data[0]['email'])),
+                  ),
+                  ListTile(
+                    title: const Text('ဆက်သွယ်ရန်ဖုန်း'),
+                    subtitle: Text(_dash(data[0]['contactPhoneNumber'])),
+                  ),
+                ],
+              ),
+            ),
+            if (user.isMonk)
+              Card(
+                child: Column(
+                  children: [
+                    ListTile(
+                      title: const Text('သံဃာတော်၏ ကျောင်းတိုက်'),
+                      trailing: IconButton(
+                        tooltip: 'ကျောင်းတိုက်အချက်အလက်ပြင်ရန်',
+                        onPressed: busy ? null : () => _editMonk(data[2]),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
+                    ),
+                    ListTile(
+                      title: const Text('ကျောင်းတိုက်အမည်'),
+                      subtitle: Text(_dash(data[2]['monasteryName'])),
+                    ),
+                    ListTile(
+                      title: const Text('လိပ်စာ'),
+                      subtitle: Text(_dash(data[2]['monasteryAddress'])),
+                    ),
+                  ],
                 ),
               ),
-              for (final entry in settingLabels.entries)
-                ListTile(
-                  title: Text(entry.value),
-                  subtitle: Text(
-                    dateLabel(DateTime.tryParse(data[1][entry.key] ?? '')),
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    title: const Text('ပို့ဆောင်ချိန်နှင့် အသိပေးချိန်'),
+                    trailing: IconButton(
+                      tooltip: 'အချိန်ပြင်ရန်',
+                      onPressed: busy ? null : () => _editSettings(data[1]),
+                      icon: const Icon(Icons.edit_outlined),
+                    ),
                   ),
-                ),
-            ],
-          ),
+                  for (final entry in settingLabels.entries)
+                    ListTile(
+                      title: Text(entry.value),
+                      subtitle: Text(
+                        dateLabel(DateTime.tryParse(data[1][entry.key] ?? '')),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (busy) const LinearProgressIndicator(),
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              onPressed: busy ? null : widget.auth.logout,
+              icon: const Icon(Icons.logout),
+              label: const Text('အကောင့်ထွက်ရန်'),
+            ),
+          ],
         ),
-        if (busy) const LinearProgressIndicator(),
-        const SizedBox(height: 24),
-        OutlinedButton.icon(
-          onPressed: busy ? null : widget.auth.logout,
-          icon: const Icon(Icons.logout),
-          label: const Text('အကောင့်ထွက်ရန်'),
-        ),
-      ],
-    ),
-  ),
-);
+      ),
+    );
   }
+
   Future<void> _save(Future<void> Function() action) async {
     setState(() => busy = true);
     final ok = await runAction(context, action);
@@ -297,4 +320,72 @@ class _SettingsDialogState extends State<_SettingsDialog> {
       ),
     ],
   );
+}
+
+class ThemeModeCard extends StatelessWidget {
+  const ThemeModeCard({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.isRegistered<ThemeController>()
+        ? Get.find<ThemeController>()
+        : Get.put(ThemeController(), permanent: true);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.contrast_outlined),
+              title: Text('အသွင်အပြင်'),
+              subtitle: Text('စနစ်အတိုင်း၊ နေ့အလင်း သို့မဟုတ် ညမှောင်'),
+            ),
+            Obx(
+              () => Column(
+                children: [
+                  for (final (mode, label, icon) in [
+                    (
+                      ThemeMode.system,
+                      'စနစ်အတိုင်း',
+                      Icons.settings_brightness_outlined,
+                    ),
+                    (ThemeMode.light, 'နေ့အလင်း', Icons.light_mode_outlined),
+                    (ThemeMode.dark, 'ညမှောင်', Icons.dark_mode_outlined),
+                  ])
+                    Semantics(
+                      selected: controller.themeMode == mode,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(icon),
+                        title: Text(label),
+                        trailing: controller.themeMode == mode
+                            ? Icon(
+                                Icons.check_circle,
+                                color: Theme.of(context).colorScheme.primary,
+                              )
+                            : null,
+                        onTap: () async {
+                          try {
+                            await controller.setThemeMode(mode);
+                          } catch (_) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('အသွင်အပြင် သိမ်း၍ မရသေးပါ။'),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -79,8 +79,14 @@ class _DonationsScreenState extends State<DonationsScreen> {
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'ကျောင်းတိုက်',
-                      prefixIcon: const Icon(Icons.temple_buddhist_outlined, size: 20),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      prefixIcon: const Icon(
+                        Icons.temple_buddhist_outlined,
+                        size: 20,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -111,7 +117,10 @@ class _DonationsScreenState extends State<DonationsScreen> {
                     decoration: InputDecoration(
                       labelText: 'အခြေအနေ',
                       prefixIcon: const Icon(Icons.tune_outlined, size: 20),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -124,7 +133,10 @@ class _DonationsScreenState extends State<DonationsScreen> {
                       for (var i = 0; i < donationStatuses.length; i++)
                         DropdownMenuItem(
                           value: i,
-                          child: Text(donationStatuses[i], overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            donationStatuses[i],
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                     ],
                     onChanged: (v) => setState(() {
@@ -179,7 +191,9 @@ class _DonationsScreenState extends State<DonationsScreen> {
                     description:
                         'ဆွမ်း သို့မဟုတ် ဝတ္ထုငွေ လှူဒါန်းမှုများကို ဤနေရာတွင် စာရင်းသွင်း ကြည့်ရှုနိုင်ပါသည်။',
                     actionLabel: widget.user.can('Donation.Create')
-                        ? (widget.user.isMonk ? 'ဆွမ်းစာရင်းသွင်းရန်' : 'လှူဒါန်းရန်')
+                        ? (widget.user.isMonk
+                              ? 'ဆွမ်းစာရင်းသွင်းရန်'
+                              : 'လှူဒါန်းရန်')
                         : null,
                     onAction: widget.user.can('Donation.Create')
                         ? () async {
@@ -280,14 +294,8 @@ class _DonationCardState extends State<DonationCard> {
       if (operate && widget.user.can('Donation.Delete') && d.status != 5)
         'delete': 'ဖျက်ရန်',
     };
-    final color = switch (d.status) {
-      2 => Colors.orange.shade800,
-      3 || 5 => Colors.green.shade800,
-      4 => Colors.blue.shade800,
-      6 || 7 => Colors.red.shade700,
-      _ => Colors.grey.shade700,
-    };
     return Card(
+      elevation: 1,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -300,6 +308,7 @@ class _DonationCardState extends State<DonationCard> {
                       ? Icons.rice_bowl_outlined
                       : Icons.volunteer_activism_outlined,
                   size: 22,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -329,18 +338,23 @@ class _DonationCardState extends State<DonationCard> {
             ),
             Text(
               monastery?.name ?? 'ကျောင်းတိုက် အမှတ်စဉ် ${d.monasteryId}',
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             Text(d.donorName.isEmpty ? 'အလှူရှင်' : d.donorName),
             if (d.amount != null)
-              Text('${NumberFormat.decimalPattern().format(d.amount)} ကျပ်'),
+              Text(
+                '${NumberFormat.decimalPattern().format(d.amount)} ကျပ်',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
             if (d.quantity != null) Text('အရေအတွက်: ${d.quantity}'),
             const SizedBox(height: 8),
-            Text(
-              d.statusLabel,
-              style: TextStyle(color: color, fontWeight: FontWeight.w600),
-            ),
+            StatusBadge(status: d.status, label: d.statusLabel),
             const SizedBox(height: 6),
             Text(
               'ကြိုယူ: ${dateLabel(d.pickup)}',

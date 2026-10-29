@@ -1,24 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeController extends GetxController {
-  final _isDarkMode = false.obs;
-  bool get isDarkMode => _isDarkMode.value;
+  static const preferenceKey = 'theme_mode';
+  final _mode = ThemeMode.system.obs;
+  ThemeMode get themeMode => _mode.value;
+  bool get isDarkMode =>
+      themeMode == ThemeMode.dark ||
+      (themeMode == ThemeMode.system && Get.isPlatformDarkMode);
 
   @override
   void onInit() {
     super.onInit();
-    // Initialize with system theme, or you could load from SharedPreferences
-    _isDarkMode.value = Get.isPlatformDarkMode;
+    final stored = Get.isRegistered<SharedPreferences>()
+        ? Get.find<SharedPreferences>().getString(preferenceKey)
+        : null;
+    _mode.value = ThemeMode.values.firstWhere(
+      (mode) => mode.name == stored,
+      orElse: () => ThemeMode.system,
+    );
   }
 
-  void toggleTheme() {
-    _isDarkMode.value = !_isDarkMode.value;
-
-    // Switch the theme
-    Get.changeThemeMode(_isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
-
-    // Note: If you want to persist this, you can save the `_isDarkMode.value`
-    // to SharedPreferences or GetStorage here.
+  Future<void> setThemeMode(ThemeMode mode) async {
+    final prefs = Get.isRegistered<SharedPreferences>()
+        ? Get.find<SharedPreferences>()
+        : await SharedPreferences.getInstance();
+    await prefs.setString(preferenceKey, mode.name);
+    _mode.value = mode;
   }
+
+  void toggleTheme() =>
+      setThemeMode(isDarkMode ? ThemeMode.light : ThemeMode.dark);
 }

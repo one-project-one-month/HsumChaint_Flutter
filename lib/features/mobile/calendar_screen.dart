@@ -69,7 +69,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.user.isMonk ? 'ဆွမ်းအလှူအချိန်ဇယား' : 'ဆွမ်းပြက္ခဒိန်',
+                    widget.user.isMonk
+                        ? 'ဆွမ်းအလှူအချိန်ဇယား'
+                        : 'ဆွမ်းပြက္ခဒိန်',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -86,8 +88,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     isExpanded: true,
                     decoration: InputDecoration(
                       labelText: 'ကျောင်းတိုက်',
-                      prefixIcon: const Icon(Icons.temple_buddhist_outlined, size: 20),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      prefixIcon: const Icon(
+                        Icons.temple_buddhist_outlined,
+                        size: 20,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -95,7 +103,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     items: [
                       const DropdownMenuItem<int>(
                         value: null,
-                        child: Text('မိမိ၏ လှူဒါန်းမှုများ', overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          'မိမိ၏ လှူဒါန်းမှုများ',
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                       for (final m in widget.mine)
                         DropdownMenuItem(
@@ -118,7 +129,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     decoration: InputDecoration(
                       labelText: 'အခြေအနေ',
                       prefixIcon: const Icon(Icons.tune_outlined, size: 20),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -131,7 +145,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       for (var i = 0; i < donationStatuses.length; i++)
                         DropdownMenuItem(
                           value: i,
-                          child: Text(donationStatuses[i], overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            donationStatuses[i],
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                     ],
                     onChanged: (v) => setState(() {
@@ -293,7 +310,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     const EmptyStateView(
                       icon: Icons.calendar_today_outlined,
                       title: 'ဤကာလအတွင်း လှူဒါန်းမှု မရှိသေးပါ',
-                      description: 'ရွေးချယ်ထားသော ရက်စွဲ သို့မဟုတ် ကျောင်းတိုက်ကို ပြန်လည်စစ်ဆေးကြည့်ပါ။',
+                      description:
+                          'ရွေးချယ်ထားသော ရက်စွဲ သို့မဟုတ် ကျောင်းတိုက်ကို ပြန်လည်စစ်ဆေးကြည့်ပါ။',
                     ),
                   for (final donation in donations)
                     DonationCard(
@@ -319,33 +337,43 @@ class _CalendarScreenState extends State<CalendarScreen> {
       padding: const EdgeInsets.all(2),
       child: Material(
         color: selectedDay == day
-            ? const Color(0xFF18181B)
+            ? Theme.of(context).colorScheme.primary
             : count > 0
-            ? const Color(0xFFF4F4F5)
+            ? Theme.of(context).colorScheme.primaryContainer
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: () =>
-              setState(() => selectedDay = selectedDay == day ? null : day),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '$day',
-                style: TextStyle(
-                  color: selectedDay == day ? Colors.white : null,
-                ),
-              ),
-              if (count > 0)
+        borderRadius: BorderRadius.circular(24),
+        child: Semantics(
+          button: true,
+          selected: selectedDay == day,
+          label:
+              '${DateFormat.yMMMd().format(DateTime(month.year, month.month, day))} · $count လှူဒါန်းမှု',
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: () =>
+                setState(() => selectedDay = selectedDay == day ? null : day),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Text(
-                  '$count',
+                  '$day',
                   style: TextStyle(
-                    fontSize: 10,
-                    color: selectedDay == day ? Colors.white : Colors.grey,
+                    color: selectedDay == day
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : null,
                   ),
                 ),
-            ],
+                if (count > 0)
+                  Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: selectedDay == day
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

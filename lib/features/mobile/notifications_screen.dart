@@ -90,7 +90,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     background: Container(
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.all(20),
-                      color: Colors.red.shade100,
+                      color: Theme.of(context).colorScheme.errorContainer,
                       child: const Icon(Icons.delete_outline),
                     ),
                     confirmDismiss: (_) async {
@@ -115,6 +115,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     child: Card(
                       child: ListTile(
                         leading: Icon(
+                          color: n['isRead'] == true
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
+                              : Theme.of(context).colorScheme.primary,
                           n['isRead'] == true
                               ? Icons.notifications_none
                               : Icons.notifications_active_outlined,

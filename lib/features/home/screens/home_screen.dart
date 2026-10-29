@@ -1,3 +1,4 @@
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
@@ -89,7 +90,19 @@ class _HomeScreenState extends State<HomeScreen> {
       Icons.person_outline,
     ];
     return Scaffold(
+      extendBody: true,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        toolbarHeight: 80,
+        backgroundColor: Theme.of(
+          context,
+        ).colorScheme.surface.withValues(alpha: .85),
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: const SizedBox.expand(),
+          ),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -97,9 +110,19 @@ class _HomeScreenState extends State<HomeScreen> {
               'Hsum Chaint (ဆွမ်းချိုင့်)',
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
-            Text(
-              '${user.name} · ${user.isMonk ? 'သံဃာတော်' : 'အလှူရှင်'}',
-              style: const TextStyle(fontSize: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                '${user.name} · ${user.isMonk ? 'သံဃာတော်' : 'အလှူရှင်'}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
             ),
           ],
         ),
@@ -108,15 +131,15 @@ class _HomeScreenState extends State<HomeScreen> {
               widget.tab != 'monasteries' &&
               widget.tab != 'notifications' &&
               widget.tab != 'profile')
-          IconButton(
-            tooltip: 'အသိပေးချက်',
-            onPressed: () => context.go('/notifications'),
-            icon: Badge(
-              isLabelVisible: _unread > 0,
-              label: Text('$_unread'),
-              child: const Icon(Icons.notifications_outlined),
+            IconButton(
+              tooltip: 'အသိပေးချက်',
+              onPressed: () => context.go('/notifications'),
+              icon: Badge(
+                isLabelVisible: _unread > 0,
+                label: Text('$_unread'),
+                child: const Icon(Icons.notifications_outlined),
+              ),
             ),
-          ),
         ],
       ),
       body: SafeArea(
@@ -158,14 +181,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index < 0 ? 0 : index,
-        height: 76,
-        onDestinationSelected: (value) => context.go('/${tabs[value]}'),
-        destinations: [
-          for (var i = 0; i < tabs.length; i++)
-            NavigationDestination(icon: Icon(icons[i]), label: labels[i]),
-        ],
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: NavigationBar(
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.surface.withValues(alpha: .85),
+            selectedIndex: index < 0 ? 0 : index,
+            height: 72,
+            onDestinationSelected: (value) => context.go('/${tabs[value]}'),
+            destinations: [
+              for (var i = 0; i < tabs.length; i++)
+                NavigationDestination(icon: Icon(icons[i]), label: labels[i]),
+            ],
+          ),
+        ),
       ),
     );
   }

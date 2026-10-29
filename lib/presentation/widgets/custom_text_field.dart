@@ -22,10 +22,10 @@ class CustomInputTextField extends StatelessWidget {
   final String? hintText;
   final TextStyle? hintStyle;
   final TextStyle? textStyle;
-  final Color cursorColor;
-  final Color fillColor;
-  final Color borderColor;
-  final Color focusedBorderColor;
+  final Color? cursorColor;
+  final Color? fillColor;
+  final Color? borderColor;
+  final Color? focusedBorderColor;
   final double borderRadius;
   final EdgeInsets contentPadding;
 
@@ -67,11 +67,11 @@ class CustomInputTextField extends StatelessWidget {
     this.hintText,
     this.hintStyle,
     this.textStyle,
-    this.cursorColor = Colors.black,
-    this.fillColor = Colors.white,
-    this.borderColor = Colors.grey,
-    this.focusedBorderColor = const Color.fromARGB(255, 200, 174, 4),
-    this.borderRadius = 8,
+    this.cursorColor,
+    this.fillColor,
+    this.borderColor,
+    this.focusedBorderColor,
+    this.borderRadius = 12,
     this.contentPadding = const EdgeInsets.symmetric(
       vertical: 10,
       horizontal: 12,
@@ -113,26 +113,28 @@ class CustomInputTextField extends StatelessWidget {
         maxLength: maxLength,
         textInputAction: textInputAction,
         keyboardType: keyboardType,
-        cursorColor: cursorColor,
+        cursorColor: cursorColor ?? Theme.of(context).colorScheme.primary,
         style: textStyle,
         onChanged: onChanged,
         onEditingComplete: onEditingComplete,
         obscureText: obscureText,
         decoration: InputDecoration(
           filled: true,
-          fillColor: fillColor,
+          fillColor: fillColor ?? Theme.of(context).colorScheme.surface,
           hintText: hintText,
           hintStyle: hintStyle,
           contentPadding: contentPadding,
           prefixIcon: prefixIcon,
           suffixIcon: showClearButton
               ? IconButton(
+                  tooltip: 'ရှင်းရန်',
                   icon: Icon(
                     Icons.clear,
                     size: 16,
                     color: controller.text.isNotEmpty
-                        ? focusedBorderColor
-                        : Colors.grey[300],
+                        ? (focusedBorderColor ??
+                              Theme.of(context).colorScheme.primary)
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   onPressed: () {
                     controller.clear();
@@ -143,11 +145,19 @@ class CustomInputTextField extends StatelessWidget {
               : suffixIcon,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(borderRadius),
-            borderSide: BorderSide(color: borderColor, width: 1.5),
+            borderSide: BorderSide(
+              color:
+                  borderColor ?? Theme.of(context).colorScheme.outlineVariant,
+              width: 1,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(borderRadius),
-            borderSide: BorderSide(color: focusedBorderColor, width: 2),
+            borderSide: BorderSide(
+              color:
+                  focusedBorderColor ?? Theme.of(context).colorScheme.primary,
+              width: 1.5,
+            ),
           ),
         ),
       ),

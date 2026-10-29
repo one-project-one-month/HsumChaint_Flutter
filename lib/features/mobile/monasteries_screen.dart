@@ -114,7 +114,8 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                 textInputAction: TextInputAction.search,
                 onSubmitted: (_) => _search(),
                 decoration: InputDecoration(
-                  hintText: 'ကျောင်းတိုက် အမည် သို့မဟုတ် မြို့နယ်ဖြင့် ရှာဖွေရန်...',
+                  hintText:
+                      'ကျောင်းတိုက် အမည် သို့မဟုတ် မြို့နယ်ဖြင့် ရှာဖွေရန်...',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: ValueListenableBuilder<TextEditingValue>(
                     valueListenable: search,
@@ -180,61 +181,64 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                         const EmptyStateView(
                           icon: Icons.mark_email_unread_outlined,
                           title: 'ဖိတ်ကြားချက် မရှိသေးပါ',
-                          description: 'ကျောင်းတိုက်များမှ အဖွဲ့ဝင် ဖိတ်ကြားလွှာများ မရှိသေးပါ။',
+                          description:
+                              'ကျောင်းတိုက်များမှ အဖွဲ့ဝင် ဖိတ်ကြားလွှာများ မရှိသေးပါ။',
                         ),
-                    for (final invitation in result.items)
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                invitation['monasterySpaceName'] ??
-                                    'ကျောင်းတိုက်',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'တာဝန်အဆင့်: ${invitation['spaceRoleName'] ?? spaceRoles[invitation['spaceRoleId']] ?? ''}',
-                              ),
-                              Text(
-                                'ဖိတ်ကြားသူ: ${invitation['invitedByName'] ?? ''}',
-                              ),
-                              if (invitation['status'] == 0)
-                                Wrap(
-                                  spacing: 8,
-                                  children: [
-                                    FilledButton(
-                                      onPressed: busy
-                                          ? null
-                                          : () => _respond(invitation['id'], 1),
-                                      child: const Text('လက်ခံရန်'),
-                                    ),
-                                    OutlinedButton(
-                                      onPressed: busy
-                                          ? null
-                                          : () => _respond(invitation['id'], 2),
-                                      child: const Text('ငြင်းပယ်ရန်'),
-                                    ),
-                                  ],
-                                )
-                              else
+                      for (final invitation in result.items)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  invitation['status'] == 1
-                                      ? 'လက်ခံပြီး'
-                                      : 'ငြင်းပယ်ပြီး',
+                                  invitation['monasterySpaceName'] ??
+                                      'ကျောင်းတိုက်',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                            ],
+                                Text(
+                                  'တာဝန်အဆင့်: ${invitation['spaceRoleName'] ?? spaceRoles[invitation['spaceRoleId']] ?? ''}',
+                                ),
+                                Text(
+                                  'ဖိတ်ကြားသူ: ${invitation['invitedByName'] ?? ''}',
+                                ),
+                                if (invitation['status'] == 0)
+                                  Wrap(
+                                    spacing: 8,
+                                    children: [
+                                      FilledButton(
+                                        onPressed: busy
+                                            ? null
+                                            : () =>
+                                                  _respond(invitation['id'], 1),
+                                        child: const Text('လက်ခံရန်'),
+                                      ),
+                                      OutlinedButton(
+                                        onPressed: busy
+                                            ? null
+                                            : () =>
+                                                  _respond(invitation['id'], 2),
+                                        child: const Text('ငြင်းပယ်ရန်'),
+                                      ),
+                                    ],
+                                  )
+                                else
+                                  Text(
+                                    invitation['status'] == 1
+                                        ? 'လက်ခံပြီး'
+                                        : 'ငြင်းပယ်ပြီး',
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    _pager(result.hasNext, result.totalPages),
-                  ],
+                      _pager(result.hasNext, result.totalPages),
+                    ],
+                  ),
                 ),
-              ),
-            )
+              )
             : LoadView(
                 future: future,
                 retry: _reload,
@@ -250,14 +254,22 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                       if (result.items.isEmpty)
                         EmptyStateView(
                           icon: Icons.temple_buddhist_outlined,
-                          title: section == 1 ? 'မိမိကျောင်းတိုက် မရှိသေးပါ' : 'ကျောင်းတိုက် မတွေ့ရှိပါ',
+                          title: section == 1
+                              ? 'မိမိကျောင်းတိုက် မရှိသေးပါ'
+                              : 'ကျောင်းတိုက် မတွေ့ရှိပါ',
                           description: section == 1
                               ? 'သံဃာတော်များ သို့မဟုတ် ကျောင်းစီမံခန့်ခွဲသူများထံမှ ဖိတ်ခေါ်ချက်ကို စောင့်ဆိုင်းပါ သို့မဟုတ် ကျောင်းတိုက်အသစ် ထည့်သွင်းပါ။'
                               : 'ကျောင်းတိုက်အမည် သို့မဟုတ် မြို့နယ်ဖြင့် အသစ်ရှာဖွေကြည့်ပါ။',
-                          actionLabel: (section == 1 && widget.user.isMonk && widget.user.can('Monastery.Create'))
+                          actionLabel:
+                              (section == 1 &&
+                                  widget.user.isMonk &&
+                                  widget.user.can('Monastery.Create'))
                               ? 'ကျောင်းတိုက်အသစ်'
                               : null,
-                          onAction: (section == 1 && widget.user.isMonk && widget.user.can('Monastery.Create'))
+                          onAction:
+                              (section == 1 &&
+                                  widget.user.isMonk &&
+                                  widget.user.can('Monastery.Create'))
                               ? _create
                               : null,
                         ),
@@ -286,7 +298,10 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.temple_buddhist_outlined),
+                Icon(
+                  Icons.temple_buddhist_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -311,15 +326,19 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   'အဖွဲ့ဝင် · ${spaceRoles[current.roleId] ?? 'Owner'}',
-                  style: const TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             if (widget.user.can('Donation.Create') || current.isMember) ...[
               const SizedBox(height: 12),
-              Row(
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
                 children: [
                   if (widget.user.can('Donation.Create'))
-                    FilledButton.tonal(
+                    FilledButton(
                       onPressed: () async {
                         final changed = await showDonationForm(
                           context,
@@ -332,7 +351,6 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                       },
                       child: const Text('လှူဒါန်းရန်'),
                     ),
-                  const Spacer(),
                   if (current.isMember)
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
@@ -491,7 +509,7 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
                         onPressed: busy ? null : _edit,
                         child: const Text('ပြင်ဆင်ရန်'),
                       ),
-                      FilledButton.tonal(
+                      FilledButton(
                         onPressed: busy ? null : _invite,
                         child: const Text('အဖွဲ့ဝင်ဖိတ်ရန်'),
                       ),
@@ -637,7 +655,8 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
   }
 
   Future<void> _delete() async {
-    if (!await confirmAction(context, 'ကျောင်းတိုက်အား အပြီးတိုင် ဖျက်မည်') || !mounted) {
+    if (!await confirmAction(context, 'ကျောင်းတိုက်အား အပြီးတိုင် ဖျက်မည်') ||
+        !mounted) {
       return;
     }
     setState(() => busy = true);
@@ -666,7 +685,10 @@ class _MonasteryDetailsState extends State<MonasteryDetails> {
 
   Future<void> _memberAction(Json member, String action) async {
     if (action == 'remove') {
-      if (!await confirmAction(context, 'အဖွဲ့ဝင်စာရင်းမှ ပယ်ဖျက်မည်') || !mounted) return;
+      if (!await confirmAction(context, 'အဖွဲ့ဝင်စာရင်းမှ ပယ်ဖျက်မည်') ||
+          !mounted) {
+        return;
+      }
       await _mutate(() async {
         await widget.repo.call(
           'DELETE',
@@ -821,7 +843,9 @@ class _InviteDialogState extends State<_InviteDialog> {
             controller: phone,
             keyboardType: TextInputType.phone,
             decoration: const InputDecoration(labelText: 'ဖုန်းနံပါတ်'),
-            validator: (v) => v?.trim().isEmpty != false ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။' : null,
+            validator: (v) => v?.trim().isEmpty != false
+                ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။'
+                : null,
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<int>(
