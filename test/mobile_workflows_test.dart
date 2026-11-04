@@ -188,7 +188,7 @@ void main() {
         accepted = true;
         return ok(true);
       }
-      if (r.path.endsWith('/invitations')) {
+      if (r.path.contains('/invitations')) {
         return ok([
           {
             'id': 9,

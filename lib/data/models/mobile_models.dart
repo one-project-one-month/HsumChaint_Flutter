@@ -18,6 +18,32 @@ class PageData<T> {
   }
 }
 
+class CursorPageData<T> {
+  final List<T> items;
+  final int? nextCursor;
+  final bool hasNextPage;
+  final int pageSize;
+
+  const CursorPageData({
+    required this.items,
+    this.nextCursor,
+    required this.hasNextPage,
+    required this.pageSize,
+  });
+
+  factory CursorPageData.fromJson(Json json, T Function(Json) parse) {
+    final pagination = Map<String, dynamic>.from(json['pagination'] ?? {});
+    return CursorPageData(
+      items: (json['data'] as List? ?? [])
+          .map((e) => parse(Map<String, dynamic>.from(e)))
+          .toList(),
+      nextCursor: pagination['nextCursor'],
+      hasNextPage: pagination['hasNextPage'] == true,
+      pageSize: pagination['pageSize'] ?? 15,
+    );
+  }
+}
+
 const donationTypes = [
   'နဝကမ္မ',
   'ဆွမ်း',

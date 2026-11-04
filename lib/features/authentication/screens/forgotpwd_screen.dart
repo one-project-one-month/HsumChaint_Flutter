@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'package:hsum_chaint/core/navigation/app_routes.dart';
@@ -29,15 +30,23 @@ class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
   }
 
   void _verifyPhone() {
-    if (phoneController.text.trim().isEmpty) {
+    final phone = phoneController.text.trim();
+    if (phone.isEmpty) {
       Get.snackbar('Required', 'Please enter your phone number');
+      return;
+    }
+    if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
+      Get.snackbar(
+        'Invalid',
+        'Phone number must contain English digits only',
+      );
       return;
     }
     context.pushNamed(
       AppRoutes.optName,
-      pathParameters: {'phone': phoneController.text},
+      pathParameters: {'phone': phone},
     );
-    // context.push('/forgot-password-reset');
+    return;
   }
 
   @override
@@ -55,6 +64,9 @@ class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
           CustomInputTextField(
             controller: phoneController,
             keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+            ],
             textStyle: const TextStyle(fontSize: 16, color: Colors.black),
             hintText: 'Enter your phone number',
             hintStyle: const TextStyle(

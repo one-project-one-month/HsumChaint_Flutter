@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CustomInputTextField extends StatelessWidget {
   final bool visible;
@@ -17,6 +18,7 @@ class CustomInputTextField extends StatelessWidget {
   final bool readOnly;
   final int maxLines;
   final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
 
   // UI
   final String? hintText;
@@ -62,6 +64,7 @@ class CustomInputTextField extends StatelessWidget {
     this.readOnly = false,
     this.maxLines = 1,
     this.maxLength,
+    this.inputFormatters,
 
     // UI
     this.hintText,
@@ -113,6 +116,7 @@ class CustomInputTextField extends StatelessWidget {
         maxLength: maxLength,
         textInputAction: textInputAction,
         keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
         cursorColor: cursorColor ?? Theme.of(context).colorScheme.primary,
         style: textStyle,
         onChanged: onChanged,

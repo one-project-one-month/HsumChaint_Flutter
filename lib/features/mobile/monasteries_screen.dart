@@ -24,40 +24,123 @@ class MonasteriesScreen extends StatefulWidget {
 
 class _MonasteriesScreenState extends State<MonasteriesScreen> {
   final search = TextEditingController();
+  final _scrollController = ScrollController();
   late int section = widget.user.isMonk ? 1 : 0;
-  int page = 1;
   String keyword = '';
   bool busy = false;
-  late Future<PageData<Monastery>> future;
-  late Future<PageData<Json>> invitations;
+
+  final List<Monastery> _monasteries = [];
+  final List<Json> _invitations = [];
+  int? _nextCursor;
+  bool _hasNextPage = true;
+  bool _isLoadingInitial = true;
+  bool _isLoadingMore = false;
+  String? _error;
+
   @override
   void initState() {
     super.initState();
-    _fetch();
+    _scrollController.addListener(_onScroll);
+    _loadInitial();
   }
 
   @override
   void dispose() {
     search.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _fetch() {
-    if (section == 2) {
-      invitations = widget.repo.list(
-        '/api/user/${widget.user.id}/invitations',
-        page: page,
-      );
-    } else {
-      future = widget.repo.monasteries(
-        mine: section == 1,
-        keyword: keyword,
-        page: page,
-      );
+  void _onScroll() {
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200) {
+      _loadMore();
     }
   }
 
-  void _reload() => setState(_fetch);
+  Future<void> _loadInitial() async {
+    setState(() {
+      _isLoadingInitial = true;
+      _error = null;
+    });
+    try {
+      if (section == 2) {
+        final result = await widget.repo.invitationsFeed(
+          int.parse(widget.user.id),
+          pageSize: 15,
+        );
+        if (!mounted) return;
+        setState(() {
+          _invitations.clear();
+          _invitations.addAll(result.items);
+          _nextCursor = result.nextCursor;
+          _hasNextPage = result.hasNextPage;
+          _isLoadingInitial = false;
+        });
+      } else {
+        final result = await widget.repo.monasteriesFeed(
+          mine: section == 1,
+          keyword: keyword,
+          pageSize: 15,
+        );
+        if (!mounted) return;
+        setState(() {
+          _monasteries.clear();
+          _monasteries.addAll(result.items);
+          _nextCursor = result.nextCursor;
+          _hasNextPage = result.hasNextPage;
+          _isLoadingInitial = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isLoadingInitial = false;
+      });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasNextPage || _nextCursor == null) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      if (section == 2) {
+        final result = await widget.repo.invitationsFeed(
+          int.parse(widget.user.id),
+          lastId: _nextCursor,
+          pageSize: 15,
+        );
+        if (!mounted) return;
+        setState(() {
+          _invitations.addAll(result.items);
+          _nextCursor = result.nextCursor;
+          _hasNextPage = result.hasNextPage;
+          _isLoadingMore = false;
+        });
+      } else {
+        final result = await widget.repo.monasteriesFeed(
+          mine: section == 1,
+          keyword: keyword,
+          lastId: _nextCursor,
+          pageSize: 15,
+        );
+        if (!mounted) return;
+        setState(() {
+          _monasteries.addAll(result.items);
+          _nextCursor = result.nextCursor;
+          _hasNextPage = result.hasNextPage;
+          _isLoadingMore = false;
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingMore = false);
+    }
+  }
+
+  void _reload() => _loadInitial();
   @override
   Widget build(BuildContext context) => Column(
     children: [
@@ -102,11 +185,10 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
                 ButtonSegment(value: 2, label: Text('ဖိတ်ကြားချက်')),
               ],
               selected: {section},
-              onSelectionChanged: (v) => setState(() {
-                section = v.first;
-                page = 1;
-                _fetch();
-              }),
+              onSelectionChanged: (v) {
+                setState(() => section = v.first);
+                _loadInitial();
+              },
             ),
             if (section == 0) ...[
               const SizedBox(height: 12),
@@ -165,129 +247,174 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
         ),
       ),
       Expanded(
-        child: section == 2
-            ? LoadView(
-                future: invitations,
-                retry: _reload,
-                builder: (result) => RefreshIndicator(
-                  onRefresh: () async {
-                    _reload();
-                    await invitations;
-                  },
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      if (result.items.isEmpty)
-                        const EmptyStateView(
-                          icon: Icons.mark_email_unread_outlined,
-                          title: 'ဖိတ်ကြားချက် မရှိသေးပါ',
-                          description:
-                              'ကျောင်းတိုက်များမှ အဖွဲ့ဝင် ဖိတ်ကြားလွှာများ မရှိသေးပါ။',
-                        ),
-                      for (final invitation in result.items)
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  invitation['monasterySpaceName'] ??
-                                      'ကျောင်းတိုက်',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  'တာဝန်အဆင့်: ${invitation['spaceRoleName'] ?? spaceRoles[invitation['spaceRoleId']] ?? ''}',
-                                ),
-                                Text(
-                                  'ဖိတ်ကြားသူ: ${invitation['invitedByName'] ?? ''}',
-                                ),
-                                if (invitation['status'] == 0)
-                                  Wrap(
-                                    spacing: 8,
-                                    children: [
-                                      FilledButton(
-                                        onPressed: busy
-                                            ? null
-                                            : () =>
-                                                  _respond(invitation['id'], 1),
-                                        child: const Text('လက်ခံရန်'),
-                                      ),
-                                      OutlinedButton(
-                                        onPressed: busy
-                                            ? null
-                                            : () =>
-                                                  _respond(invitation['id'], 2),
-                                        child: const Text('ငြင်းပယ်ရန်'),
-                                      ),
-                                    ],
-                                  )
-                                else
-                                  Text(
-                                    invitation['status'] == 1
-                                        ? 'လက်ခံပြီး'
-                                        : 'ငြင်းပယ်ပြီး',
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      _pager(result.hasNext, result.totalPages),
-                    ],
-                  ),
-                ),
-              )
-            : LoadView(
-                future: future,
-                retry: _reload,
-                builder: (result) => RefreshIndicator(
-                  onRefresh: () async {
-                    _reload();
-                    await future;
-                  },
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      if (result.items.isEmpty)
-                        EmptyStateView(
-                          icon: Icons.temple_buddhist_outlined,
-                          title: section == 1
-                              ? 'မိမိကျောင်းတိုက် မရှိသေးပါ'
-                              : 'ကျောင်းတိုက် မတွေ့ရှိပါ',
-                          description: section == 1
-                              ? 'သံဃာတော်များ သို့မဟုတ် ကျောင်းစီမံခန့်ခွဲသူများထံမှ ဖိတ်ခေါ်ချက်ကို စောင့်ဆိုင်းပါ သို့မဟုတ် ကျောင်းတိုက်အသစ် ထည့်သွင်းပါ။'
-                              : 'ကျောင်းတိုက်အမည် သို့မဟုတ် မြို့နယ်ဖြင့် အသစ်ရှာဖွေကြည့်ပါ။',
-                          actionLabel:
-                              (section == 1 &&
-                                  widget.user.isMonk &&
-                                  widget.user.can('Monastery.Create'))
-                              ? 'ကျောင်းတိုက်အသစ်'
-                              : null,
-                          onAction:
-                              (section == 1 &&
-                                  widget.user.isMonk &&
-                                  widget.user.can('Monastery.Create'))
-                              ? _create
-                              : null,
-                        ),
-                      for (final m in result.items) _card(m),
-                      _pager(result.hasNext, result.totalPages),
-                    ],
-                  ),
-                ),
-              ),
+        child: _buildBody(context),
       ),
     ],
   );
-  void _search() => setState(() {
+
+  Widget _buildBody(BuildContext context) {
+    if (_isLoadingInitial) {
+      return const ShimmerSkeletonList();
+    }
+
+    final hasData = section == 2 ? _invitations.isNotEmpty : _monasteries.isNotEmpty;
+    if (_error != null && !hasData) {
+      final scheme = Theme.of(context).colorScheme;
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cloud_off_outlined, size: 48, color: scheme.error),
+              const SizedBox(height: 16),
+              Text(
+                'အချက်အလက် ရယူ၍ မရသေးပါ',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _reload,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('ပြန်လည် ကြိုးစားမည်'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (section == 2) {
+      return RefreshIndicator(
+        onRefresh: () => _loadInitial(),
+        child: _invitations.isEmpty
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                children: const [
+                  EmptyStateView(
+                    icon: Icons.mark_email_unread_outlined,
+                    title: 'ဖိတ်ကြားချက် မရှိသေးပါ',
+                    description:
+                        'ကျောင်းတိုက်များမှ အဖွဲ့ဝင် ဖိတ်ကြားလွှာများ မရှိသေးပါ။',
+                  ),
+                ],
+              )
+            : ListView.builder(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: _invitations.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == _invitations.length) {
+                    return BottomLoadingIndicator(isLoading: _isLoadingMore);
+                  }
+
+                  final invitation = _invitations[index];
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            invitation['monasterySpaceName'] ?? 'ကျောင်းတိုက်',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'တာဝန်အဆင့်: ${invitation['spaceRoleName'] ?? spaceRoles[invitation['spaceRoleId']] ?? ''}',
+                          ),
+                          Text(
+                            'ဖိတ်ကြားသူ: ${invitation['invitedByName'] ?? ''}',
+                          ),
+                          if (invitation['status'] == 0)
+                            Wrap(
+                              spacing: 8,
+                              children: [
+                                FilledButton(
+                                  onPressed: busy
+                                      ? null
+                                      : () => _respond(invitation['id'], 1),
+                                  child: const Text('လက်ခံရန်'),
+                                ),
+                                OutlinedButton(
+                                  onPressed: busy
+                                      ? null
+                                      : () => _respond(invitation['id'], 2),
+                                  child: const Text('ငြင်းပယ်ရန်'),
+                                ),
+                              ],
+                            )
+                          else
+                            Text(
+                              invitation['status'] == 1
+                                  ? 'လက်ခံပြီး'
+                                  : 'ငြင်းပယ်ပြီး',
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => _loadInitial(),
+      child: _monasteries.isEmpty
+          ? ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              children: [
+                EmptyStateView(
+                  icon: Icons.temple_buddhist_outlined,
+                  title: section == 1
+                      ? 'မိမိကျောင်းတိုက် မရှိသေးပါ'
+                      : 'ကျောင်းတိုက် မတွေ့ရှိပါ',
+                  description: section == 1
+                      ? 'သံဃာတော်များ သို့မဟုတ် ကျောင်းစီမံခန့်ခွဲသူများထံမှ ဖိတ်ခေါ်ချက်ကို စောင့်ဆိုင်းပါ သို့မဟုတ် ကျောင်းတိုက်အသစ် ထည့်သွင်းပါ။'
+                      : 'ကျောင်းတိုက်အမည် သို့မဟုတ် မြို့နယ်ဖြင့် အသစ်ရှာဖွေကြည့်ပါ။',
+                  actionLabel: (section == 1 &&
+                          widget.user.isMonk &&
+                          widget.user.can('Monastery.Create'))
+                      ? 'ကျောင်းတိုက်အသစ်'
+                      : null,
+                  onAction: (section == 1 &&
+                          widget.user.isMonk &&
+                          widget.user.can('Monastery.Create'))
+                      ? _create
+                      : null,
+                ),
+              ],
+            )
+          : ListView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              itemCount: _monasteries.length + 1,
+              itemBuilder: (context, index) {
+                if (index == _monasteries.length) {
+                  return BottomLoadingIndicator(isLoading: _isLoadingMore);
+                }
+                return _card(_monasteries[index]);
+              },
+            ),
+    );
+  }
+
+  void _search() {
     keyword = search.text.trim();
-    page = 1;
-    _fetch();
-  });
+    _loadInitial();
+  }
   Widget _card(Monastery m) {
     final joined = widget.mine.where((e) => e.id == m.id);
     final current = joined.isEmpty ? m : joined.first;
@@ -382,32 +509,6 @@ class _MonasteriesScreenState extends State<MonasteriesScreen> {
     );
   }
 
-  Widget _pager(bool hasNext, int total) => Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      IconButton(
-        tooltip: 'ယခင်စာမျက်နှာ',
-        onPressed: page > 1
-            ? () => setState(() {
-                page--;
-                _fetch();
-              })
-            : null,
-        icon: const Icon(Icons.chevron_left),
-      ),
-      Text('$page / ${total == 0 ? 1 : total}'),
-      IconButton(
-        tooltip: 'နောက်စာမျက်နှာ',
-        onPressed: hasNext
-            ? () => setState(() {
-                page++;
-                _fetch();
-              })
-            : null,
-        icon: const Icon(Icons.chevron_right),
-      ),
-    ],
-  );
   Future<void> _respond(int id, int status) async {
     setState(() => busy = true);
     final ok = await runAction(context, () async {

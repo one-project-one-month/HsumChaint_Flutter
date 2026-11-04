@@ -179,6 +179,58 @@ void main() {
     expect(spaces.first.canOperate, isFalse);
   });
 
+  test('cursor-based feed repository methods map routes and query parameters correctly', () async {
+    final adapter = FakeAdapter((r) => ResponseBody.fromString(
+      jsonEncode({
+        'isSuccess': true,
+        'message': 'Success',
+        'data': [
+          {'id': 10, 'monasteryName': 'Feed Monastery', 'monasterySpaceId': 1, 'donationType': 1, 'status': 2},
+        ],
+        'pagination': {
+          'nextCursor': 10,
+          'hasNextPage': true,
+          'pageSize': 15,
+        },
+      }),
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    ));
+    final repo = MobileRepository(service(adapter));
+
+    final mFeed = await repo.monasteriesFeed(pageSize: 15);
+    expect(mFeed.items.single.name, 'Feed Monastery');
+    expect(mFeed.nextCursor, 10);
+    expect(mFeed.hasNextPage, isTrue);
+    expect(adapter.requests.last.path, '/api/v1/monasteries/feed');
+    expect(adapter.requests.last.queryParameters['pageSize'], 15);
+
+    await repo.monasteriesFeed(keyword: 'Mandalay', lastId: 10);
+    expect(adapter.requests.last.path, '/api/v1/monasteries/search/feed');
+    expect(adapter.requests.last.queryParameters['keyword'], 'Mandalay');
+    expect(adapter.requests.last.queryParameters['lastId'], 10);
+
+    await repo.monasteriesFeed(mine: true, lastId: 10);
+    expect(adapter.requests.last.path, '/api/v1/monasteries/mine/feed');
+
+    final dFeed = await repo.donationsFeed(lastId: 5, monasteryId: 1, status: 2);
+    expect(dFeed.items.single.id, 10);
+    expect(adapter.requests.last.path, '/api/v1/donations/feed');
+    expect(adapter.requests.last.queryParameters['lastId'], 5);
+    expect(adapter.requests.last.queryParameters['monasterySpaceId'], 1);
+    expect(adapter.requests.last.queryParameters['status'], 2);
+
+    await repo.notificationsFeed(7, lastId: 10);
+    expect(adapter.requests.last.path, '/api/user/7/notification/feed');
+    expect(adapter.requests.last.queryParameters['lastId'], 10);
+
+    await repo.invitationsFeed(7, lastId: 10);
+    expect(adapter.requests.last.path, '/api/user/7/invitations/feed');
+    expect(adapter.requests.last.queryParameters['lastId'], 10);
+  });
+
   test(
     'calendar scope and recurring payload follow backend contracts',
     () async {
@@ -389,7 +441,8 @@ void main() {
     expect(
       adapter.requests.any(
         (r) =>
-            r.path == '/api/v1/donations' && r.queryParameters['donorId'] == 7,
+            (r.path == '/api/v1/donations' || r.path == '/api/v1/donations/feed') &&
+            r.queryParameters['donorId'] == 7,
       ),
       isTrue,
     );

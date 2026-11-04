@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/navigation/app_routes.dart';
@@ -22,6 +23,14 @@ class UserSignUpScreen extends GetView<AuthController> {
       return;
     }
 
+    if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
+      Get.snackbar(
+        'Invalid',
+        'Phone number must contain English digits only',
+      );
+      return;
+    }
+
     if (username.isEmpty) {
       Get.snackbar('Required', 'Username is required');
       return;
@@ -37,6 +46,14 @@ class UserSignUpScreen extends GetView<AuthController> {
       return;
     }
 
+    if (!RegExp(r'^[\x21-\x7E]+$').hasMatch(password)) {
+      Get.snackbar(
+        'Invalid',
+        'Password must contain English characters and symbols only',
+      );
+      return;
+    }
+
     if (confirmPassword.isEmpty) {
       Get.snackbar('Required', 'Confirm password is required');
       return;
@@ -44,6 +61,16 @@ class UserSignUpScreen extends GetView<AuthController> {
 
     if (password != confirmPassword) {
       Get.snackbar('Invalid', 'Passwords do not match');
+      return;
+    }
+
+    final contactPhone = controller.contactPhoneController.text.trim();
+    if (contactPhone.isNotEmpty &&
+        !RegExp(r'^\+?[0-9]{7,15}$').hasMatch(contactPhone)) {
+      Get.snackbar(
+        'Invalid',
+        'Contact phone number must contain English digits only',
+      );
       return;
     }
 
@@ -101,6 +128,9 @@ class UserSignUpScreen extends GetView<AuthController> {
           CustomInputTextField(
             controller: controller.phoneController,
             keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+            ],
             textStyle: const TextStyle(
               fontSize: 16,
               color: Colors.black,
@@ -300,6 +330,9 @@ class UserSignUpScreen extends GetView<AuthController> {
           CustomInputTextField(
             controller: controller.contactPhoneController,
             keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+            ],
             textStyle: const TextStyle(
               fontSize: 16,
               color: Colors.black,

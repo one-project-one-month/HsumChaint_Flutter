@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/navigation/app_routes.dart';
@@ -23,6 +24,14 @@ class MonkSignUpScreen extends GetView<AuthController> {
       return;
     }
 
+    if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
+      Get.snackbar(
+        'Invalid',
+        'Phone number must contain English digits only',
+      );
+      return;
+    }
+
     if (password.isEmpty) {
       Get.snackbar('Required', 'Password is required');
       return;
@@ -30,6 +39,14 @@ class MonkSignUpScreen extends GetView<AuthController> {
 
     if (password.length < 6) {
       Get.snackbar('Invalid', 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (!RegExp(r'^[\x21-\x7E]+$').hasMatch(password)) {
+      Get.snackbar(
+        'Invalid',
+        'Password must contain English characters and symbols only',
+      );
       return;
     }
 
@@ -107,6 +124,9 @@ class MonkSignUpScreen extends GetView<AuthController> {
           CustomInputTextField(
             controller: controller.phoneController,
             keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+            ],
             textStyle: const TextStyle(
               fontSize: 16,
               color: Colors.black,

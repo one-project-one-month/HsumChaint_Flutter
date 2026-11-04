@@ -42,6 +42,23 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       return;
     }
 
+    if (newPassword.length < 6) {
+      Get.snackbar(
+        'Invalid',
+        'Password must be at least 6 characters',
+      );
+      return;
+    }
+
+    if (!RegExp(r'^[\x21-\x7E]+$').hasMatch(currentPassword) ||
+        !RegExp(r'^[\x21-\x7E]+$').hasMatch(newPassword)) {
+      Get.snackbar(
+        'Invalid',
+        'Password must contain English characters and symbols only',
+      );
+      return;
+    }
+
     if (newPassword != confirmPassword) {
       Get.snackbar('Invalid', 'Passwords do not match');
       return;

@@ -1,5 +1,6 @@
-import '../../../presentation/widgets/app_logo.dart';
+﻿import '../../../presentation/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import '../controllers/auth_controller.dart';
@@ -84,7 +85,20 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                     auth.phoneController,
                     required: true,
                     keyboard: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                    ],
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။';
+                      }
+                      if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(v.trim())) {
+                        return 'ဖုန်းနံပါတ်သည် အင်္ဂလိပ်ဂဏန်းများသာ ဖြစ်ရပါမည်။';
+                      }
+                      return null;
+                    },
                   ),
+
                   TextFormField(
                     controller: auth.passwordController,
                     obscureText: _obscure,
@@ -100,9 +114,18 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။'
-                        : null,
+                    validator: (v) {
+                    if (v == null || v.isEmpty) {
+                      return 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။';
+                    }
+                    if (v.length < 6) {
+                      return 'စကားဝှက်သည် အနည်းဆုံး ၆ လုံး ရှိရပါမည်။';
+                    }
+                    if (!RegExp(r'^[\x21-\x7E]+$').hasMatch(v)) {
+                      return 'စကားဝှက်သည် အင်္ဂလိပ်စာလုံးနှင့် သင်္ကေတများသာ ဖြစ်ရပါမည်။';
+                    }
+                    return null;
+                  },
                   ),
                   const SizedBox(height: 16),
                   if (widget.register) ...[
@@ -135,10 +158,21 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                       ),
                     ] else
                       _field(
-                        'ဆက်သွယ်ရန်ဖုန်း (ရှိပါက)',
-                        auth.contactPhoneController,
-                        keyboard: TextInputType.phone,
-                      ),
+                      'ဆက်သွယ်ရန်ဖုန်း (ရှိပါက)',
+                      auth.contactPhoneController,
+                      keyboard: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                      ],
+                      validator: (v) {
+                        if (v != null &&
+                            v.trim().isNotEmpty &&
+                            !RegExp(r'^\+?[0-9]{7,15}$').hasMatch(v.trim())) {
+                          return 'ဖုန်းနံပါတ်သည် အင်္ဂလိပ်ဂဏန်းများသာ ဖြစ်ရပါမည်။';
+                        }
+                        return null;
+                      },
+                    ),
                   ],
                   Obx(
                     () => FilledButton(
@@ -171,17 +205,22 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
     TextEditingController controller, {
     bool required = false,
     TextInputType keyboard = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
     child: TextFormField(
       controller: controller,
       keyboardType: keyboard,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(labelText: label),
-      validator: (v) => required && (v == null || v.trim().isEmpty)
-          ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။'
-          : null,
+      validator: validator ??
+          ((v) => required && (v == null || v.trim().isEmpty)
+              ? 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။'
+              : null),
     ),
   );
+
 
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;

@@ -45,6 +45,31 @@ class MobileRepository {
     );
   }
 
+  Future<CursorPageData<Monastery>> monasteriesFeed({
+    String keyword = '',
+    bool mine = false,
+    int? lastId,
+    int pageSize = 15,
+  }) async {
+    final path = mine
+        ? '/api/v1/monasteries/mine/feed'
+        : keyword.trim().isEmpty
+        ? '/api/v1/monasteries/feed'
+        : '/api/v1/monasteries/search/feed';
+    return CursorPageData.fromJson(
+      await call(
+        'GET',
+        path,
+        query: {
+          'pageSize': pageSize,
+          if (lastId != null && lastId > 0) 'lastId': lastId,
+          if (!mine && keyword.trim().isNotEmpty) 'keyword': keyword.trim(),
+        },
+      ),
+      Monastery.fromJson,
+    );
+  }
+
   Future<List<Monastery>> allMine() async {
     final items = <Monastery>[];
     var page = 1;
@@ -73,6 +98,59 @@ class MobileRepository {
       },
     ),
     Donation.fromJson,
+  );
+
+  Future<CursorPageData<Donation>> donationsFeed({
+    int? lastId,
+    int pageSize = 15,
+    int? monasteryId,
+    int? donorId,
+    int? status,
+  }) async => CursorPageData.fromJson(
+    await call(
+      'GET',
+      '/api/v1/donations/feed',
+      query: {
+        'pageSize': pageSize,
+        if (lastId != null && lastId > 0) 'lastId': lastId,
+        'monasterySpaceId': ?monasteryId,
+        'donorId': ?donorId,
+        'status': ?status,
+      },
+    ),
+    Donation.fromJson,
+  );
+
+  Future<CursorPageData<Json>> notificationsFeed(
+    int userId, {
+    int? lastId,
+    int pageSize = 15,
+  }) async => CursorPageData.fromJson(
+    await call(
+      'GET',
+      '/api/user/$userId/notification/feed',
+      query: {
+        'pageSize': pageSize,
+        if (lastId != null && lastId > 0) 'lastId': lastId,
+      },
+    ),
+    (json) => json,
+  );
+
+  Future<CursorPageData<Json>> invitationsFeed(
+    int userId, {
+    int? lastId,
+    int pageSize = 15,
+  }) async => CursorPageData.fromJson(
+    await call(
+      'GET',
+      '/api/user/$userId/invitations/feed',
+      query: {
+        'pageSize': pageSize,
+        if (lastId != null && lastId > 0) 'lastId': lastId,
+      },
+    ),
+    (json) => json,
   );
   Future<CalendarSummary> calendar(
     DateTime month, {
