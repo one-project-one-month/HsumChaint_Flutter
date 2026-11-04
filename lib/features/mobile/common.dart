@@ -88,6 +88,27 @@ class ShimmerSkeletonList extends StatelessWidget {
   );
 }
 
+/// Bottom Loading Spinner for Infinite Scroll Lists
+class BottomLoadingIndicator extends StatelessWidget {
+  final bool isLoading;
+  const BottomLoadingIndicator({super.key, required this.isLoading});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isLoading) return const SizedBox(height: 24);
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      ),
+    );
+  }
+}
+
 /// Accessible Rich Empty State View
 class EmptyStateView extends StatelessWidget {
   final IconData icon;

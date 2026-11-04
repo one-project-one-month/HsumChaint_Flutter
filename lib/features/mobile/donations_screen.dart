@@ -24,29 +24,94 @@ class DonationsScreen extends StatefulWidget {
 }
 
 class _DonationsScreenState extends State<DonationsScreen> {
-  int page = 1;
+  final _scrollController = ScrollController();
+  final List<Donation> _items = [];
+  int? _nextCursor;
+  bool _hasNextPage = true;
+  bool _isLoadingInitial = true;
+  bool _isLoadingMore = false;
+  String? _error;
   int? monasteryId, status;
-  late Future<PageData<Donation>> future;
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     if (widget.user.isMonk && widget.mine.isNotEmpty) {
       monasteryId = widget.mine.first.id;
     }
-    _fetch();
+    _loadInitial();
   }
 
-  void _fetch() {
-    future = widget.repo.donations(
-      page: page,
-      monasteryId: monasteryId,
-      donorId: widget.user.isDonor ? int.parse(widget.user.id) : null,
-      status: status,
-    );
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  void _reload() {
-    setState(_fetch);
+  void _onScroll() {
+    if (_scrollController.hasClients &&
+        _scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadInitial() async {
+    setState(() {
+      _isLoadingInitial = true;
+      _error = null;
+    });
+    try {
+      final result = await widget.repo.donationsFeed(
+        pageSize: 15,
+        monasteryId: monasteryId,
+        donorId: widget.user.isDonor ? int.parse(widget.user.id) : null,
+        status: status,
+      );
+      if (!mounted) return;
+      setState(() {
+        _items.clear();
+        _items.addAll(result.items);
+        _nextCursor = result.nextCursor;
+        _hasNextPage = result.hasNextPage;
+        _isLoadingInitial = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isLoadingInitial = false;
+      });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasNextPage || _nextCursor == null) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      final result = await widget.repo.donationsFeed(
+        lastId: _nextCursor,
+        pageSize: 15,
+        monasteryId: monasteryId,
+        donorId: widget.user.isDonor ? int.parse(widget.user.id) : null,
+        status: status,
+      );
+      if (!mounted) return;
+      setState(() {
+        _items.addAll(result.items);
+        _nextCursor = result.nextCursor;
+        _hasNextPage = result.hasNextPage;
+        _isLoadingMore = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingMore = false);
+    }
+  }
+
+  Future<void> _reload() async {
+    await _loadInitial();
     widget.onChanged();
   }
 
@@ -76,9 +141,8 @@ class _DonationsScreenState extends State<DonationsScreen> {
     setState(() {
       monasteryId = result.$1;
       status = result.$2;
-      page = 1;
-      _fetch();
     });
+    _loadInitial();
   }
 
   @override
@@ -125,20 +189,18 @@ class _DonationsScreenState extends State<DonationsScreen> {
                   for (final m in widget.mine.where((m) => m.id == monasteryId))
                     InputChip(
                       label: Text(m.name),
-                      onDeleted: () => setState(() {
-                        monasteryId = null;
-                        page = 1;
-                        _fetch();
-                      }),
+                      onDeleted: () {
+                        setState(() => monasteryId = null);
+                        _loadInitial();
+                      },
                     ),
                 if (status != null)
                   InputChip(
                     label: Text(donationStatuses[status!]),
-                    onDeleted: () => setState(() {
-                      status = null;
-                      page = 1;
-                      _fetch();
-                    }),
+                    onDeleted: () {
+                      setState(() => status = null);
+                      _loadInitial();
+                    },
                   ),
               ],
             ),
@@ -146,69 +208,88 @@ class _DonationsScreenState extends State<DonationsScreen> {
         ),
       ),
       Expanded(
-        child: LoadView(
-          future: future,
-          retry: _reload,
-          builder: (result) => RefreshIndicator(
-            onRefresh: () async {
-              _reload();
-              await future;
-            },
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: [
-                if (result.items.isEmpty)
-                  EmptyStateView(
-                    icon: Icons.volunteer_activism_outlined,
-                    title: 'လှူဒါန်းမှု မှတ်တမ်း မရှိသေးပါ',
-                    description:
-                        'ဆွမ်း သို့မဟုတ် ဝတ္ထုငွေ လှူဒါန်းမှုများကို ဤနေရာတွင် စာရင်းသွင်း ကြည့်ရှုနိုင်ပါသည်။',
-                  ),
-                for (final d in result.items)
-                  DonationCard(
-                    key: ValueKey(d.id),
-                    donation: d,
-                    repo: widget.repo,
-                    user: widget.user,
-                    mine: widget.mine,
-                    onChanged: _reload,
-                  ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      tooltip: 'ယခင်စာမျက်နှာ',
-                      onPressed: page > 1
-                          ? () => setState(() {
-                              page--;
-                              _fetch();
-                            })
-                          : null,
-                      icon: const Icon(Icons.chevron_left),
-                    ),
-                    Text(
-                      '$page / ${result.totalPages == 0 ? 1 : result.totalPages}',
-                    ),
-                    IconButton(
-                      tooltip: 'နောက်စာမျက်နှာ',
-                      onPressed: result.hasNext
-                          ? () => setState(() {
-                              page++;
-                              _fetch();
-                            })
-                          : null,
-                      icon: const Icon(Icons.chevron_right),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+        child: _buildBody(context),
       ),
     ],
   );
+
+  Widget _buildBody(BuildContext context) {
+    if (_isLoadingInitial) {
+      return const ShimmerSkeletonList();
+    }
+
+    if (_error != null && _items.isEmpty) {
+      final scheme = Theme.of(context).colorScheme;
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cloud_off_outlined, size: 48, color: scheme.error),
+              const SizedBox(height: 16),
+              Text(
+                'အချက်အလက် ရယူ၍ မရသေးပါ',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _reload,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('ပြန်လည် ကြိုးစားမည်'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _reload,
+      child: _items.isEmpty
+          ? ListView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                EmptyStateView(
+                  icon: Icons.volunteer_activism_outlined,
+                  title: 'လှူဒါန်းမှု မှတ်တမ်း မရှိသေးပါ',
+                  description:
+                      'ဆွမ်း သို့မဟုတ် ဝတ္ထုငွေ လှူဒါန်းမှုများကို ဤနေရာတွင် စာရင်းသွင်း ကြည့်ရှုနိုင်ပါသည်။',
+                ),
+              ],
+            )
+          : ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: _items.length + 1,
+              itemBuilder: (context, index) {
+                if (index == _items.length) {
+                  return BottomLoadingIndicator(isLoading: _isLoadingMore);
+                }
+
+                final d = _items[index];
+                return DonationCard(
+                  key: ValueKey(d.id),
+                  donation: d,
+                  repo: widget.repo,
+                  user: widget.user,
+                  mine: widget.mine,
+                  onChanged: _reload,
+                );
+              },
+            ),
+    );
+  }
 }
 
 class DonationCard extends StatefulWidget {
