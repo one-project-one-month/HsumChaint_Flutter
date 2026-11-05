@@ -289,7 +289,7 @@ void main() {
       await repo.donationAction(
         9,
         'review',
-        body: {'status': 3, 'note': 'သာဓု'},
+        body: {'status': 1, 'note': 'သာဓု'},
       );
       await repo.donationAction(9, 'delete');
       await repo.notification(12, 7);
@@ -497,7 +497,7 @@ void main() {
               id: 4,
               monasteryId: 1,
               type: 1,
-              status: 5,
+              status: 3,
               donorId: 7,
             ),
             repo: MobileRepository(service(adapter)),

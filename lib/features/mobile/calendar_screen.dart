@@ -240,7 +240,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     if (widget.user.isMonk)
                       _metric(
                         'လက်ခံရန် စောင့်ဆိုင်းဆဲ',
-                        '${summary.days.expand((d) => d['donations'] as List? ?? []).where((d) => d['status'] == 2).length} ခု',
+                        '${summary.days.expand((d) => d['donations'] as List? ?? []).where((d) => d['status'] == 0).length} ခု',
                       ),
                   ],
                 ),

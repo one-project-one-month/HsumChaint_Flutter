@@ -53,15 +53,28 @@ const donationTypes = [
   'အခြား',
 ];
 const donationStatuses = [
-  'မူကြမ်း',
-  'တင်သွင်းပြီး',
-  'လှူဒါန်းမှုအားစောင့်ဆိုင်းဆဲ',
-  'လှူဒါန်းမှုအားလက်ခံပြီး',
+  'စောင့်ဆိုင်းဆဲ',
+  'လက်ခံပြီး',
   'ဆွမ်းချိန် သတ်မှတ်ပြီး',
-  'လှူဒါန်းမှုပြီးစီး',
-  'လှူဒါန်းမှုအား လက်မခံနိုင်သေးပါ',
-  'လှူဒါန်းမှုပယ်ဖျက်',
+  'ကပ်လှူပြီးစီး',
+  'လက်မခံနိုင်ပါ',
+  'ပယ်ဖျက်ပြီး',
 ];
+
+class DonationStatusItem {
+  final int id;
+  final String name, label;
+  const DonationStatusItem({
+    required this.id,
+    required this.name,
+    required this.label,
+  });
+  factory DonationStatusItem.fromJson(Json json) => DonationStatusItem(
+    id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+    name: json['name']?.toString() ?? '',
+    label: json['label']?.toString() ?? '',
+  );
+}
 const spaceRoles = {
   1: 'ကျောင်းထိုင်ဆရာတော်',
   2: 'စီမံခန့်ခွဲသူ',
@@ -139,7 +152,7 @@ class Donation {
   String get statusLabel => status >= 0 && status < donationStatuses.length
       ? donationStatuses[status]
       : '—';
-  bool get isActive => status != 5 && status != 6 && status != 7;
+  bool get isActive => status != 3 && status != 4 && status != 5;
 }
 
 class CalendarSummary {
