@@ -33,11 +33,13 @@ class ApiService extends GetxService {
               receiveTimeout: const Duration(seconds: 30),
             ),
           ) {
-    if (!kIsWeb && dio.httpClientAdapter is IOHttpClientAdapter) {
+    if (kDebugMode && !kIsWeb && dio.httpClientAdapter is IOHttpClientAdapter) {
       (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
         final client = HttpClient();
         client.badCertificateCallback =
-            (X509Certificate cert, String host, int port) => true;
+            (X509Certificate cert, String host, int port) {
+          return host == 'localhost' || host == '10.0.2.2' || host == '127.0.0.1';
+        };
         return client;
       };
     }

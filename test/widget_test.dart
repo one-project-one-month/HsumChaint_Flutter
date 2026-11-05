@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hsum_chaint/data/models/mobile_models.dart';
@@ -529,8 +530,12 @@ void main() {
   });
 
   test(
-    'session persistence: saves session to shared_preferences and restores on startup',
+    'session persistence: saves session to flutter_secure_storage and restores on startup',
     () async {
+      FlutterSecureStorage.setMockInitialValues({});
+      const secureStorage = FlutterSecureStorage();
+      Get.put<FlutterSecureStorage>(secureStorage);
+
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       Get.put<SharedPreferences>(prefs);
@@ -538,7 +543,7 @@ void main() {
       final api = service(FakeAdapter((_) => ok(true)));
       Get.put<ApiService>(api);
       final repo = AuthRepository(AuthProvider());
-      final controller = AuthController(repo);
+      final controller = AuthController(repo, secureStorage: secureStorage);
       Get.put<AuthController>(controller);
 
       expect(controller.isAuthenticated, isFalse);
@@ -553,7 +558,7 @@ void main() {
       );
       controller.currentUser.value = testUser;
 
-      final stored = prefs.getString(AuthController.sessionKey);
+      final stored = await secureStorage.read(key: AuthController.sessionKey);
       expect(stored, isNotNull);
       final decoded = jsonDecode(stored!) as Map<String, dynamic>;
       expect(decoded['id'], 42);
@@ -561,11 +566,16 @@ void main() {
       expect(decoded['accessToken'], 'jwt-access-token');
       expect(decoded['refreshToken'], 'jwt-refresh-token');
 
-      // Reset Get and simulate fresh launch
+      // Reset Get and simulate fresh launch with secure storage
       Get.reset();
+      Get.put<FlutterSecureStorage>(secureStorage);
       Get.put<SharedPreferences>(prefs);
       Get.put<ApiService>(service(FakeAdapter((_) => ok(true))));
-      final newController = AuthController(repo);
+      final newController = AuthController(
+        repo,
+        secureStorage: secureStorage,
+        initialSession: stored,
+      );
       Get.put<AuthController>(newController);
 
       expect(newController.isAuthenticated, isTrue);
@@ -578,7 +588,8 @@ void main() {
         'new-access-token',
         'new-refresh-token',
       );
-      final updatedStored = prefs.getString(AuthController.sessionKey);
+      final updatedStored = await secureStorage.read(key: AuthController.sessionKey);
+      expect(updatedStored, isNotNull);
       final updatedDecoded =
           jsonDecode(updatedStored!) as Map<String, dynamic>;
       expect(updatedDecoded['accessToken'], 'new-access-token');
@@ -586,23 +597,63 @@ void main() {
 
       // Test clearing session
       newController.currentUser.value = null;
+      expect(await secureStorage.read(key: AuthController.sessionKey), isNull);
+    },
+  );
+
+  test(
+    'migration fallback: migrates legacy session from shared_preferences to flutter_secure_storage',
+    () async {
+      const legacyJson =
+          '{"id": 99, "name": "Legacy User", "roleId": 3, "accessToken": "legacy-token", "refreshToken": "legacy-refresh"}';
+      FlutterSecureStorage.setMockInitialValues({});
+      const secureStorage = FlutterSecureStorage();
+      Get.put<FlutterSecureStorage>(secureStorage);
+
+      SharedPreferences.setMockInitialValues({
+        AuthController.sessionKey: legacyJson,
+      });
+      final prefs = await SharedPreferences.getInstance();
+      Get.put<SharedPreferences>(prefs);
+
+      final api = service(FakeAdapter((_) => ok(true)));
+      Get.put<ApiService>(api);
+      final repo = AuthRepository(AuthProvider());
+      final controller = AuthController(repo, secureStorage: secureStorage);
+      Get.put<AuthController>(controller);
+
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(controller.isAuthenticated, isTrue);
+      expect(controller.currentUser.value?.id, '99');
+      expect(await secureStorage.read(key: AuthController.sessionKey), legacyJson);
       expect(prefs.getString(AuthController.sessionKey), isNull);
     },
   );
 
   testWidgets(
-    'logout shows prompt dialog and confirming clears session from shared_preferences',
+    'logout shows prompt dialog and confirming clears session from secure storage',
     (tester) async {
-      SharedPreferences.setMockInitialValues({
-        AuthController.sessionKey:
-            '{"id": 42, "name": "Donor", "phoneNumber": "09123", "roleId": 3, "accessToken": "token", "refreshToken": "refresh"}',
+      const initialJson =
+          '{"id": 42, "name": "Donor", "phoneNumber": "09123", "roleId": 3, "accessToken": "token", "refreshToken": "refresh"}';
+      FlutterSecureStorage.setMockInitialValues({
+        AuthController.sessionKey: initialJson,
       });
+      const secureStorage = FlutterSecureStorage();
+      Get.put<FlutterSecureStorage>(secureStorage);
+
+      SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       Get.put<SharedPreferences>(prefs);
+
       final api = service(FakeAdapter((_) => ok(true)));
       Get.put<ApiService>(api);
       final repo = AuthRepository(AuthProvider());
-      final controller = AuthController(repo);
+      final controller = AuthController(
+        repo,
+        secureStorage: secureStorage,
+        initialSession: initialJson,
+      );
       Get.put<AuthController>(controller);
 
       final appRouter = AppRouter(authController: controller);
@@ -621,7 +672,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(controller.isAuthenticated, isTrue);
-      expect(prefs.getString(AuthController.sessionKey), isNotNull);
+      expect(await secureStorage.read(key: AuthController.sessionKey), isNotNull);
 
       controller.logout();
       await tester.pumpAndSettle();
@@ -634,7 +685,7 @@ void main() {
 
       expect(controller.isAuthenticated, isFalse);
       expect(controller.currentUser.value, isNull);
-      expect(prefs.getString(AuthController.sessionKey), isNull);
+      expect(await secureStorage.read(key: AuthController.sessionKey), isNull);
     },
   );
 

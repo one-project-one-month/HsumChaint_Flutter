@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/models/user_model.dart';
@@ -8,12 +9,25 @@ import '../../../data/services/api_service.dart';
 import '../../../presentation/helpers/dialog_helper.dart';
 
 class AuthController extends GetxController {
-  AuthController(this._authRepository);
+  AuthController(
+    this._authRepository, {
+    FlutterSecureStorage? secureStorage,
+    String? initialSession,
+  }) : _secureStorage = secureStorage ??
+           (Get.isRegistered<FlutterSecureStorage>()
+               ? Get.find<FlutterSecureStorage>()
+               : const FlutterSecureStorage()),
+       _initialSession = initialSession ??
+           (Get.isRegistered<String>(tag: 'initial_session')
+               ? Get.find<String>(tag: 'initial_session')
+               : null);
 
   static const String sessionKey = 'user_session';
 
   final AuthRepository _authRepository;
   final ApiService _apiService = Get.find<ApiService>();
+  final FlutterSecureStorage _secureStorage;
+  final String? _initialSession;
 
   SharedPreferences? get _prefs =>
       Get.isRegistered<SharedPreferences>() ? Get.find<SharedPreferences>() : null;
@@ -27,29 +41,26 @@ class AuthController extends GetxController {
   void onInit() {
     super.onInit();
 
-    // 1. Restore persistent session if present.
-    final raw = _prefs?.getString(sessionKey);
-    if (raw != null) {
-      try {
-        final map = jsonDecode(raw) as Map<String, dynamic>;
-        final user = UserModel.fromJson(map);
-        final userId = int.tryParse(user.id);
-        if (user.token != null && user.refreshToken != null && userId != null) {
-          _apiService.setSession(user.token!, user.refreshToken!, userId);
-        }
-        currentUser.value = user;
-      } catch (_) {
-        _prefs?.remove(sessionKey);
-      }
+    // 1. Restore persistent session: if pre-read in main(), use immediately.
+    // Otherwise read asynchronously from FlutterSecureStorage with SharedPreferences migration fallback.
+    if (_initialSession != null) {
+      _applySessionString(_initialSession);
+    } else {
+      _restoreSession();
     }
 
-    // 2. Automatically synchronize local storage whenever currentUser changes.
-    ever(currentUser, (user) {
-      if (user != null) {
-        _prefs?.setString(sessionKey, jsonEncode(user.toJson()));
-      } else {
-        _prefs?.remove(sessionKey);
-      }
+    // 2. Automatically synchronize secure storage whenever currentUser changes.
+    ever(currentUser, (user) async {
+      try {
+        if (user != null) {
+          await _secureStorage.write(
+            key: sessionKey,
+            value: jsonEncode(user.toJson()),
+          );
+        } else {
+          await _secureStorage.delete(key: sessionKey);
+        }
+      } catch (_) {}
     });
 
     // 3. Keep storage synchronized when tokens are refreshed.
@@ -66,9 +77,48 @@ class AuthController extends GetxController {
 
     // 4. Handle expired session.
     _apiService.onSessionExpired = () {
+      _secureStorage.delete(key: sessionKey);
       _prefs?.remove(sessionKey);
       currentUser.value = null;
     };
+  }
+
+  bool _applySessionString(String raw) {
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      final user = UserModel.fromJson(map);
+      final userId = int.tryParse(user.id);
+      if (user.token != null && user.refreshToken != null && userId != null) {
+        _apiService.setSession(user.token!, user.refreshToken!, userId);
+      }
+      currentUser.value = user;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _restoreSession() async {
+    try {
+      final raw = await _secureStorage.read(key: sessionKey);
+      if (raw != null) {
+        if (!_applySessionString(raw)) {
+          await _secureStorage.delete(key: sessionKey);
+        }
+        return;
+      }
+      // One-time fallback: read legacy unencrypted session from SharedPreferences, migrate, and clean up.
+      final oldRaw = _prefs?.getString(sessionKey);
+      if (oldRaw != null) {
+        if (_applySessionString(oldRaw)) {
+          await _secureStorage.write(key: sessionKey, value: oldRaw);
+        }
+        await _prefs?.remove(sessionKey);
+      }
+    } catch (_) {
+      await _secureStorage.delete(key: sessionKey);
+      await _prefs?.remove(sessionKey);
+    }
   }
 
   // Inputs
@@ -239,6 +289,7 @@ class AuthController extends GetxController {
       confirmText: 'ထွက်မည်',
       cancelText: 'မထွက်ပါ',
       onConfirm: () async {
+        await _secureStorage.delete(key: sessionKey);
         await _prefs?.remove(sessionKey);
         _apiService.clearSession();
         currentUser.value = null;
