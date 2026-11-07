@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-
 import 'package:hsum_chaint/core/navigation/app_routes.dart';
+import 'package:hsum_chaint/features/authentication/controllers/auth_controller.dart';
 import 'package:hsum_chaint/presentation/widgets/custom_text_field.dart';
 import 'package:hsum_chaint/utils/extensions/num_extensions.dart';
 import 'package:go_router/go_router.dart';
 import '../../../presentation/widgets/primary_button.dart';
-import '../../../utils/extensions/extensions.dart';
 
 class ForgotPasswordPhoneScreen extends StatefulWidget {
   const ForgotPasswordPhoneScreen({super.key});
@@ -18,78 +16,78 @@ class ForgotPasswordPhoneScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordPhoneScreenState extends State<ForgotPasswordPhoneScreen> {
-  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final AuthController auth = Get.find<AuthController>();
 
   static const _fieldBorderColor = Color(0xFFB9852B);
   static const _hintColor = Color(0xFF9B9B9B);
 
   @override
   void dispose() {
-    phoneController.dispose();
+    emailController.dispose();
     super.dispose();
   }
 
-  void _verifyPhone() {
-    final phone = phoneController.text.trim();
-    if (phone.isEmpty) {
-      Get.snackbar('Required', 'Please enter your phone number');
+  Future<void> _submitEmail() async {
+    final email = emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      Get.snackbar('Required', 'Please enter a valid email address');
       return;
     }
-    if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
-      Get.snackbar(
-        'Invalid',
-        'Phone number must contain English digits only',
+
+    final success = await auth.forgotPassword(email);
+    if (success && mounted) {
+      context.push(
+        AppRoutes.optPath,
+        extra: {
+          'destination': email,
+          'purpose': 'RESET_PASSWORD',
+        },
       );
-      return;
     }
-    context.pushNamed(
-      AppRoutes.optName,
-      pathParameters: {'phone': phone},
-    );
-    return;
   }
 
   @override
   Widget build(BuildContext context) {
-    return PasswordPageWrapper(
-      title: 'Forgot Password',
-      buttonText: 'Verify Phone Number',
-      onPressed: _verifyPhone,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          28.h,
-          const FieldLabel('Phone Number'),
-          10.h,
-          CustomInputTextField(
-            controller: phoneController,
-            keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
-            ],
-            textStyle: const TextStyle(fontSize: 16, color: Colors.black),
-            hintText: 'Enter your phone number',
-            hintStyle: const TextStyle(
-              fontSize: 16,
-              color: _hintColor,
-              fontWeight: FontWeight.w400,
+    return Obx(
+      () => PasswordPageWrapper(
+        title: 'Forgot Password',
+        buttonText: 'Send Verification Code',
+        isLoading: auth.isLoading.value,
+        onPressed: _submitEmail,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            28.h,
+            const FieldLabel('Email Address'),
+            10.h,
+            CustomInputTextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              textStyle: const TextStyle(fontSize: 16, color: Colors.black),
+              hintText: 'Enter your email address',
+              hintStyle: const TextStyle(
+                fontSize: 16,
+                color: _hintColor,
+                fontWeight: FontWeight.w400,
+              ),
+              fillColor: Colors.transparent,
+              borderColor: _fieldBorderColor,
+              focusedBorderColor: _fieldBorderColor,
+              borderRadius: 10,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+              showClearButton: false,
             ),
-            fillColor: Colors.transparent,
-            borderColor: _fieldBorderColor,
-            focusedBorderColor: _fieldBorderColor,
-            borderRadius: 10,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
+            12.h,
+            const Text(
+              'Please enter the email address you used when\ncreating your account.',
+              style: TextStyle(fontSize: 14, color: Colors.black, height: 1.45),
             ),
-            showClearButton: false,
-          ),
-          12.h,
-          const Text(
-            'Please enter the phone number you used when\ncreating your account.',
-            style: TextStyle(fontSize: 14, color: Colors.black, height: 1.45),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -102,12 +100,14 @@ class PasswordPageWrapper extends StatelessWidget {
     required this.child,
     required this.buttonText,
     required this.onPressed,
+    this.isLoading = false,
   });
 
   final String title;
   final Widget child;
   final String buttonText;
   final VoidCallback onPressed;
+  final bool isLoading;
 
   static const _bgColor = Color(0xFFF6F2EC);
   static const _glowColor = Color(0xFFF2CC87);
@@ -168,7 +168,7 @@ class PasswordPageWrapper extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   child: PrimaryButton(
                     text: buttonText,
-                    isLoading: false,
+                    isLoading: isLoading,
                     onPressed: onPressed,
                   ),
                 ),

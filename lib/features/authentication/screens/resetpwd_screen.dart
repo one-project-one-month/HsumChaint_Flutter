@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hsum_chaint/features/authentication/controllers/auth_controller.dart';
 import 'package:hsum_chaint/features/authentication/screens/forgotpwd_screen.dart';
 import 'package:hsum_chaint/presentation/widgets/custom_text_field.dart';
 import 'package:hsum_chaint/presentation/widgets/primary_button.dart';
 import 'package:hsum_chaint/utils/extensions/num_extensions.dart';
 
 class ForgotPasswordResetScreen extends StatefulWidget {
-  const ForgotPasswordResetScreen({super.key});
+  final String? email;
+  final String? otp;
+  const ForgotPasswordResetScreen({super.key, this.email, this.otp});
 
   @override
   State<ForgotPasswordResetScreen> createState() =>
@@ -17,6 +21,7 @@ class _ForgotPasswordResetScreenState extends State<ForgotPasswordResetScreen> {
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  final AuthController auth = Get.find<AuthController>();
 
   bool isNewPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
@@ -29,8 +34,15 @@ class _ForgotPasswordResetScreenState extends State<ForgotPasswordResetScreen> {
   }
 
   void _save() async {
+    final email = widget.email ?? '';
+    final otp = widget.otp ?? '';
     final newPassword = newPasswordController.text.trim();
     final confirmPassword = confirmPasswordController.text.trim();
+
+    if (email.isEmpty || otp.isEmpty) {
+      Get.snackbar('Error', 'Missing email or OTP code. Please request OTP again.');
+      return;
+    }
 
     if (newPassword.isEmpty || confirmPassword.isEmpty) {
       Get.snackbar('Required', 'Please fill in all fields');
@@ -58,55 +70,66 @@ class _ForgotPasswordResetScreenState extends State<ForgotPasswordResetScreen> {
       return;
     }
 
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => PasswordUpdatedBottomSheet(
-        onGoToLogin: () {
-          Navigator.pop(context);
-          // context.go('/login');
-        },
-      ),
+    final success = await auth.resetPassword(
+      email: email,
+      otp: otp,
+      newPassword: newPassword,
     );
+
+    if (success && mounted) {
+      await showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (_) => PasswordUpdatedBottomSheet(
+          onGoToLogin: () {
+            Navigator.pop(context);
+            context.go('/login');
+          },
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return PasswordPageWrapper(
-      title: 'Forgot Password',
-      buttonText: 'Save',
-      onPressed: _save,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          28.h,
-          const FieldLabel('New Password'),
-          10.h,
-          PasswordField(
-            controller: newPasswordController,
-            hintText: 'Enter your new password',
-            isVisible: isNewPasswordVisible,
-            onToggle: () {
-              setState(() {
-                isNewPasswordVisible = !isNewPasswordVisible;
-              });
-            },
-          ),
-          18.h,
-          const FieldLabel('Confirm Password'),
-          10.h,
-          PasswordField(
-            controller: confirmPasswordController,
-            hintText: 'Enter your password',
-            isVisible: isConfirmPasswordVisible,
-            onToggle: () {
-              setState(() {
-                isConfirmPasswordVisible = !isConfirmPasswordVisible;
-              });
-            },
-          ),
-        ],
+    return Obx(
+      () => PasswordPageWrapper(
+        title: 'Forgot Password',
+        buttonText: 'Save',
+        isLoading: auth.isLoading.value,
+        onPressed: _save,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            28.h,
+            const FieldLabel('New Password'),
+            10.h,
+            PasswordField(
+              controller: newPasswordController,
+              hintText: 'Enter your new password',
+              isVisible: isNewPasswordVisible,
+              onToggle: () {
+                setState(() {
+                  isNewPasswordVisible = !isNewPasswordVisible;
+                });
+              },
+            ),
+            18.h,
+            const FieldLabel('Confirm Password'),
+            10.h,
+            PasswordField(
+              controller: confirmPasswordController,
+              hintText: 'Enter your password',
+              isVisible: isConfirmPasswordVisible,
+              onToggle: () {
+                setState(() {
+                  isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                });
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
