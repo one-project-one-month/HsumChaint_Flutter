@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hsum_chaint/features/authentication/controllers/auth_controller.dart';
@@ -11,6 +12,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   Get.put<SharedPreferences>(prefs, permanent: true);
+
+  const secureStorage = FlutterSecureStorage();
+  Get.put<FlutterSecureStorage>(secureStorage, permanent: true);
+
+  final initialSession = await secureStorage.read(key: AuthController.sessionKey);
+  if (initialSession != null) {
+    Get.put<String>(initialSession, tag: 'initial_session', permanent: true);
+  }
+
   runApp(const MyApp());
 }
 

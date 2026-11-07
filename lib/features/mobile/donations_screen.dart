@@ -320,6 +320,8 @@ class _DonationCardState extends State<DonationCard> {
     final operate = monastery?.canOperate == true;
     final actions = <String, String>{
       'detail': 'အသေးစိတ်',
+      if (operate && (widget.user.can('Donation.Review') || widget.user.can('Donation.Schedule')) && d.status != 3)
+        'status': 'အခြေအနေ ပြောင်းရန်',
       if (operate && widget.user.can('Donation.Review') && d.isActive)
         'review': 'လက်ခံ / ငြင်းပယ်',
       if (operate && widget.user.can('Donation.Schedule') && d.isActive)
@@ -330,22 +332,12 @@ class _DonationCardState extends State<DonationCard> {
           widget.user.can('Donation.Cancel') &&
           d.isActive)
         'cancel': 'ပယ်ဖျက်ရန်',
-      if (operate && widget.user.can('Donation.Delete') && d.status != 5)
+      if (operate && widget.user.can('Donation.Delete') && d.status != 3)
         'delete': 'ဖျက်ရန်',
     };
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final statusLabel = switch (d.status) {
-      0 => 'မူကြမ်း',
-      1 => 'တင်သွင်းပြီး',
-      2 => 'စောင့်ဆိုင်းဆဲ',
-      3 => 'လက်ခံပြီး',
-      4 => 'အချိန်သတ်မှတ်ပြီး',
-      5 => 'ကပ်လှူပြီး',
-      6 => 'လက်မခံနိုင်ပါ',
-      7 => 'ပယ်ဖျက်ပြီး',
-      _ => d.statusLabel,
-    };
+    final statusLabel = d.statusLabel;
     final muted = theme.textTheme.bodySmall?.copyWith(
       color: scheme.onSurfaceVariant,
     );
@@ -599,7 +591,13 @@ class _DonationCardState extends State<DonationCard> {
       );
       return;
     }
-    if (action == 'review') {
+    if (action == 'status') {
+      body = await showDialog<Json>(
+        context: context,
+        builder: (_) => _UpdateStatusDialog(currentStatus: d.status),
+      );
+      if (body == null || !mounted) return;
+    } else if (action == 'review') {
       body = await showDialog<Json>(
         context: context,
         builder: (_) => const _ReviewDialog(),
@@ -675,13 +673,84 @@ class _ReviewDialogState extends State<_ReviewDialog> {
       ),
       TextButton(
         onPressed: () =>
-            Navigator.pop(context, {'status': 6, 'note': note.text.trim()}),
+            Navigator.pop(context, {'status': 4, 'note': note.text.trim()}),
         child: const Text('ငြင်းပယ်ရန်'),
       ),
       FilledButton(
         onPressed: () =>
-            Navigator.pop(context, {'status': 3, 'note': note.text.trim()}),
+            Navigator.pop(context, {'status': 1, 'note': note.text.trim()}),
         child: const Text('လက်ခံရန်'),
+      ),
+    ],
+  );
+}
+
+class _UpdateStatusDialog extends StatefulWidget {
+  final int currentStatus;
+  const _UpdateStatusDialog({required this.currentStatus});
+
+  @override
+  State<_UpdateStatusDialog> createState() => _UpdateStatusDialogState();
+}
+
+class _UpdateStatusDialogState extends State<_UpdateStatusDialog> {
+  late int selectedStatus;
+  final note = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    selectedStatus = widget.currentStatus;
+  }
+
+  @override
+  void dispose() {
+    note.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('အလှူမှတ်တမ်း အခြေအနေ ပြောင်းရန်'),
+    content: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DropdownButtonFormField<int>(
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'အခြေအနေ အသစ်'),
+            value: selectedStatus,
+            items: [
+              for (var i = 0; i < donationStatuses.length; i++)
+                DropdownMenuItem(
+                  value: i,
+                  child: Text(donationStatuses[i], overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            onChanged: (val) {
+              if (val != null) setState(() => selectedStatus = val);
+            },
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: note,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'မှတ်ချက် (စိတ်ကြိုက်)'),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('မလုပ်တော့ပါ'),
+      ),
+      FilledButton(
+        onPressed: () => Navigator.pop(context, {
+          'status': selectedStatus,
+          'note': note.text.trim(),
+        }),
+        child: const Text('ပြောင်းလဲမည်'),
       ),
     ],
   );

@@ -128,7 +128,7 @@ class MobileRepository {
   }) async => CursorPageData.fromJson(
     await call(
       'GET',
-      '/api/user/$userId/notification/feed',
+      '/api/v1/user/$userId/notification/feed',
       query: {
         'pageSize': pageSize,
         if (lastId != null && lastId > 0) 'lastId': lastId,
@@ -144,7 +144,7 @@ class MobileRepository {
   }) async => CursorPageData.fromJson(
     await call(
       'GET',
-      '/api/user/$userId/invitations/feed',
+      '/api/v1/user/$userId/invitations/feed',
       query: {
         'pageSize': pageSize,
         if (lastId != null && lastId > 0) 'lastId': lastId,
@@ -184,10 +184,28 @@ class MobileRepository {
     );
   }
 
+  Future<List<DonationStatusItem>> fetchStatuses() async {
+    try {
+      final res = await call('GET', '/api/v1/donations/statuses');
+      final list = res['data'] as List? ?? [];
+      return list.map((e) => DonationStatusItem.fromJson(Json.from(e))).toList();
+    } catch (_) {
+      return [
+        for (var i = 0; i < donationStatuses.length; i++)
+          DonationStatusItem(
+            id: i,
+            name: 'Status$i',
+            label: donationStatuses[i],
+          ),
+      ];
+    }
+  }
+
   Future<void> donationAction(int id, String action, {Json? body}) async {
     final method = switch (action) {
       'delete' => 'DELETE',
       'schedule' => 'PUT',
+      'status' => 'PUT',
       _ => 'POST',
     };
     await call(

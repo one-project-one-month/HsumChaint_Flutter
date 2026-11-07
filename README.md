@@ -53,7 +53,7 @@ credentials; sessions live in memory and app restarts require login.
 - Register uses POST /api/v1/auth/register with roleId 2 or 3. The backend has no
   OTP or password-recovery endpoints, so these legacy screens are not routed.
 - Login returns data.id, data.accessToken, data.refreshToken, roleId and permissions;
-  profile data is loaded separately from /api/user/{id}.
+  profile data is loaded separately from /api/v1/user/{id}.
 - Listing uses /api/v1/monasteries; nonblank search uses /search?keyword=...
   with pageNumber/pageSize. Ordering is owned by the backend.
 - Manual donations require a managing space role as well as route permission.

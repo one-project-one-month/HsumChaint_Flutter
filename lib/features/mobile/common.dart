@@ -343,22 +343,22 @@ class StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (background, foreground, border) = switch (status) {
-      2 => (
+      0 => (
         const Color(0xFFFEF3C7),
         const Color(0xFF92400E),
         const Color(0xFFFDE68A),
       ),
-      3 => (
+      1 => (
         const Color(0xFFECFDF5),
         const Color(0xFF065F46),
         const Color(0xFFA7F3D0),
       ),
-      4 || 5 => (
+      2 || 3 => (
         const Color(0xFFEFF6FF),
         const Color(0xFF1E40AF),
         const Color(0xFFBFDBFE),
       ),
-      6 || 7 => (
+      4 || 5 => (
         const Color(0xFFFEE2E2),
         const Color(0xFF991B1B),
         const Color(0xFFFECACA),

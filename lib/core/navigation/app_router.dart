@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/authentication/controllers/auth_controller.dart';
+import '../../features/authentication/screens/chagepwd_screen.dart';
+import '../../features/authentication/screens/forgotpwd_screen.dart';
 import '../../features/authentication/screens/mobile_auth_screen.dart';
+import '../../features/authentication/screens/opt_screen.dart';
+import '../../features/authentication/screens/resetpwd_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import 'app_routes.dart';
 import 'router_refresh_notifier.dart';
@@ -40,6 +44,39 @@ class AppRouter {
         name: AppRoutes.monkSignupName,
         builder: (_, state) =>
             const MobileAuthScreen(register: true, monk: true),
+      ),
+      GoRoute(
+        path: AppRoutes.optPath,
+        name: AppRoutes.optName,
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return OtpVerificationScreen(
+            destination: extra?['destination'] as String? ?? '',
+            purpose: extra?['purpose'] as String? ?? 'VERIFY_EMAIL',
+            channel: extra?['channel'] as String? ?? 'EMAIL',
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPasswordPath,
+        name: AppRoutes.forgotPasswordName,
+        builder: (_, state) => const ForgotPasswordPhoneScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.resetPasswordPath,
+        name: AppRoutes.resetPasswordName,
+        builder: (_, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return ForgotPasswordResetScreen(
+            email: extra?['email'] as String?,
+            otp: extra?['otp'] as String?,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.changePasswordPath,
+        name: AppRoutes.changePasswordName,
+        builder: (_, state) => const ChangePasswordScreen(),
       ),
       GoRoute(
         path: '/',

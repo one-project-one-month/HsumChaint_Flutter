@@ -81,14 +81,14 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('အားလုံး'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('လှူဒါန်းမှုပြီးစီး').last);
-      await tester.tap(find.text('လှူဒါန်းမှုပြီးစီး').last);
+      await tester.ensureVisible(find.text('ကပ်လှူပြီးစီး').last);
+      await tester.tap(find.text('ကပ်လှူပြီးစီး').last);
       await tester.pumpAndSettle();
       expect(adapter.requests, hasLength(1));
       await tester.tap(find.text('ရလဒ်များ ပြရန်'));
       await tester.pumpAndSettle();
       expect(adapter.requests, hasLength(2));
-      expect(adapter.requests.last.queryParameters['status'], 5);
+      expect(adapter.requests.last.queryParameters['status'], 3);
       await tester.tap(find.text('စစ်ထုတ်ထားသည်'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('စစ်ထုတ်မှုများ ရှင်းရန်'));

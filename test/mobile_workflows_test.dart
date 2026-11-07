@@ -224,7 +224,7 @@ void main() {
     expect(request.data, {'status': 1});
   });
 
-  testWidgets('profile and settings screens use unversioned user routes', (
+  testWidgets('profile and settings screens use /api/v1/user routes', (
     tester,
   ) async {
     final adapter = FakeAdapter((r) {
@@ -249,9 +249,9 @@ void main() {
     expect(
       adapter.requests.map((r) => r.path),
       containsAll([
-        '/api/user/7',
-        '/api/user/7/settings',
-        '/api/user/7/monk-profile',
+        '/api/v1/user/7',
+        '/api/v1/user/7/settings',
+        '/api/v1/user/7/monk-profile',
       ]),
     );
     await tester.tap(find.byTooltip('ပြင်ဆင်ရန်'));
@@ -263,7 +263,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'သိမ်းရန်'));
     await tester.pumpAndSettle();
     final request = adapter.requests.singleWhere((r) => r.method == 'PUT');
-    expect(request.path, '/api/user');
+    expect(request.path, '/api/v1/user');
     expect(request.data['id'], 7);
     expect(request.data['roleId'], 2);
     expect(request.data['name'], 'ဆရာတော်');
@@ -322,7 +322,7 @@ void main() {
             : fail(401, 'Expired');
       });
       final api = service(adapter)..setSession('old', 'old-refresh', 7);
-      final oldRequest = api.get('/api/user/7');
+      final oldRequest = api.get('/api/v1/user/7');
       // Install the error expectation before completing the pending refresh.
       final failed = expectLater(oldRequest, throwsA(isA<Exception>()));
       while (!adapter.requests.any((r) => r.path.endsWith('/refresh-token'))) {
@@ -332,7 +332,7 @@ void main() {
       api.setSession('new-user', 'new-user-refresh', 9);
       pending.complete(ok({...session, 'accessToken': 'old-refreshed'}));
       await failed;
-      await api.get('/api/user/9');
+      await api.get('/api/v1/user/9');
       expect(adapter.requests.last.headers['Authorization'], 'Bearer new-user');
     },
   );

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/theme/theme_controller.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/navigation/app_routes.dart';
 import '../../data/models/mobile_models.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/mobile_repository.dart';
@@ -34,9 +36,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _fetch() {
     future = Future.wait([
-      widget.repo.object('/api/user/${user.id}'),
-      widget.repo.object('/api/user/${user.id}/settings'),
-      if (user.isMonk) widget.repo.object('/api/user/${user.id}/monk-profile'),
+      widget.repo.object('/api/v1/user/${user.id}'),
+      widget.repo.object('/api/v1/user/${user.id}/settings'),
+      if (user.isMonk) widget.repo.object('/api/v1/user/${user.id}/monk-profile'),
     ]);
   }
 
@@ -157,6 +159,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             if (busy) const LinearProgressIndicator(),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.lock_outline),
+                title: const Text('စကားဝှက် ပြောင်းရန်'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: busy ? null : () => context.push(AppRoutes.changePasswordPath),
+              ),
+            ),
             const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: busy ? null : widget.auth.logout,
@@ -195,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (body == null || !mounted) return;
     await _save(() async {
       final updated = {...initial, ...body};
-      await widget.repo.call('PUT', '/api/user', body: updated);
+      await widget.repo.call('PUT', '/api/v1/user', body: updated);
       widget.auth.currentUser.value = UserModel.fromJson({
         ...updated,
         'accessToken': user.token,
@@ -217,7 +227,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _save(() async {
       await widget.repo.call(
         'PATCH',
-        '/api/user/${user.id}/monk-profile',
+        '/api/v1/user/${user.id}/monk-profile',
         body: body,
       );
     });
@@ -232,7 +242,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _save(() async {
       await widget.repo.call(
         'PUT',
-        '/api/user/${user.id}/settings',
+        '/api/v1/user/${user.id}/settings',
         body: body,
       );
     });
