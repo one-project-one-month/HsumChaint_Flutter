@@ -282,7 +282,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final ok = await runAction(context, () async {
       await widget.repo.call(
         'DELETE',
-        '/api/user/${widget.userId}/notification',
+        '/api/v1/user/${widget.userId}/notification',
       );
     });
     if (!mounted) return;

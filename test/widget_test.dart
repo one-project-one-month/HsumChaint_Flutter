@@ -86,7 +86,7 @@ void main() {
     () async {
       final adapter = FakeAdapter((request) {
         if (request.path == '/api/v1/auth/login') return ok(session);
-        expect(request.path, '/api/user/7');
+        expect(request.path, '/api/v1/user/7');
         expect(request.headers['Authorization'], 'Bearer access');
         return ok({
           'id': 7,
@@ -224,11 +224,11 @@ void main() {
     expect(adapter.requests.last.queryParameters['status'], 2);
 
     await repo.notificationsFeed(7, lastId: 10);
-    expect(adapter.requests.last.path, '/api/user/7/notification/feed');
+    expect(adapter.requests.last.path, '/api/v1/user/7/notification/feed');
     expect(adapter.requests.last.queryParameters['lastId'], 10);
 
     await repo.invitationsFeed(7, lastId: 10);
-    expect(adapter.requests.last.path, '/api/user/7/invitations/feed');
+    expect(adapter.requests.last.path, '/api/v1/user/7/invitations/feed');
     expect(adapter.requests.last.queryParameters['lastId'], 10);
   });
 
@@ -349,8 +349,8 @@ void main() {
       });
       final api = service(adapter)..setSession('old-access', 'old-refresh', 7);
       await Future.wait([
-        api.get('/api/user/7'),
-        api.get('/api/user/7/settings'),
+        api.get('/api/v1/user/7'),
+        api.get('/api/v1/user/7/settings'),
       ]);
       expect(refreshes, 1);
       expect(
@@ -368,7 +368,7 @@ void main() {
       final api = service(adapter)
         ..setSession('old', 'refresh', 7)
         ..onSessionExpired = () => expired = true;
-      await expectLater(api.get('/api/user/7'), throwsA(isA<ApiFailure>()));
+      await expectLater(api.get('/api/v1/user/7'), throwsA(isA<ApiFailure>()));
       expect(expired, isTrue);
       expect(adapter.requests, hasLength(2));
     },

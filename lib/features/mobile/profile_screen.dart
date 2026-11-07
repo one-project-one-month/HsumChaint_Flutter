@@ -36,9 +36,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _fetch() {
     future = Future.wait([
-      widget.repo.object('/api/user/${user.id}'),
-      widget.repo.object('/api/user/${user.id}/settings'),
-      if (user.isMonk) widget.repo.object('/api/user/${user.id}/monk-profile'),
+      widget.repo.object('/api/v1/user/${user.id}'),
+      widget.repo.object('/api/v1/user/${user.id}/settings'),
+      if (user.isMonk) widget.repo.object('/api/v1/user/${user.id}/monk-profile'),
     ]);
   }
 
@@ -205,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (body == null || !mounted) return;
     await _save(() async {
       final updated = {...initial, ...body};
-      await widget.repo.call('PUT', '/api/user', body: updated);
+      await widget.repo.call('PUT', '/api/v1/user', body: updated);
       widget.auth.currentUser.value = UserModel.fromJson({
         ...updated,
         'accessToken': user.token,
@@ -227,7 +227,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _save(() async {
       await widget.repo.call(
         'PATCH',
-        '/api/user/${user.id}/monk-profile',
+        '/api/v1/user/${user.id}/monk-profile',
         body: body,
       );
     });
@@ -242,7 +242,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await _save(() async {
       await widget.repo.call(
         'PUT',
-        '/api/user/${user.id}/settings',
+        '/api/v1/user/${user.id}/settings',
         body: body,
       );
     });

@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       var page = 1;
       while (true) {
         final result = await repo.list(
-          '/api/user/${user.id}/notification',
+          '/api/v1/user/${user.id}/notification',
           page: page++,
         );
         count += result.items.where((n) => n['isRead'] != true).length;

@@ -48,7 +48,7 @@ class AuthProvider {
     },
   );
 
-  Future<Response<dynamic>> getProfile(int id) => _api.get('/api/user/$id');
+  Future<Response<dynamic>> getProfile(int id) => _api.get('/api/v1/user/$id');
 
   Future<Response<dynamic>> requestOtp({
     required String destination,

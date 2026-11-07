@@ -128,7 +128,7 @@ class MobileRepository {
   }) async => CursorPageData.fromJson(
     await call(
       'GET',
-      '/api/user/$userId/notification/feed',
+      '/api/v1/user/$userId/notification/feed',
       query: {
         'pageSize': pageSize,
         if (lastId != null && lastId > 0) 'lastId': lastId,
@@ -144,7 +144,7 @@ class MobileRepository {
   }) async => CursorPageData.fromJson(
     await call(
       'GET',
-      '/api/user/$userId/invitations/feed',
+      '/api/v1/user/$userId/invitations/feed',
       query: {
         'pageSize': pageSize,
         if (lastId != null && lastId > 0) 'lastId': lastId,
