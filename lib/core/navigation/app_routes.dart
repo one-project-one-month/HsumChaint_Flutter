@@ -27,7 +27,6 @@ abstract final class AppRoutes {
     userSignupPath,
     optPath,
     forgotPasswordPath,
-    changePasswordPath,
     resetPasswordPath,
   };
 
