@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/theme/theme_controller.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/navigation/app_routes.dart';
 import '../../data/models/mobile_models.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/mobile_repository.dart';
@@ -157,6 +159,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             if (busy) const LinearProgressIndicator(),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.lock_outline),
+                title: const Text('စကားဝှက် ပြောင်းရန်'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: busy ? null : () => context.push(AppRoutes.changePasswordPath),
+              ),
+            ),
             const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: busy ? null : widget.auth.logout,
