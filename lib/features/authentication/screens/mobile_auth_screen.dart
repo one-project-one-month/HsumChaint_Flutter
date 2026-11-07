@@ -1,8 +1,9 @@
-﻿import '../../../presentation/widgets/app_logo.dart';
+import '../../../presentation/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_routes.dart';
 import '../controllers/auth_controller.dart';
 
 class MobileAuthScreen extends StatefulWidget {
@@ -115,19 +116,28 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                       ),
                     ),
                     validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။';
-                    }
-                    if (v.length < 6) {
-                      return 'စကားဝှက်သည် အနည်းဆုံး ၆ လုံး ရှိရပါမည်။';
-                    }
-                    if (!RegExp(r'^[\x21-\x7E]+$').hasMatch(v)) {
-                      return 'စကားဝှက်သည် အင်္ဂလိပ်စာလုံးနှင့် သင်္ကေတများသာ ဖြစ်ရပါမည်။';
-                    }
-                    return null;
-                  },
+                      if (v == null || v.isEmpty) {
+                        return 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။';
+                      }
+                      if (v.length < 6) {
+                        return 'စကားဝှက်သည် အနည်းဆုံး ၆ လုံး ရှိရပါမည်။';
+                      }
+                      if (!RegExp(r'^[\x21-\x7E]+$').hasMatch(v)) {
+                        return 'စကားဝှက်သည် အင်္ဂလိပ်စာလုံးနှင့် သင်္ကေတများသာ ဖြစ်ရပါမည်။';
+                      }
+                      return null;
+                    },
                   ),
-                  const SizedBox(height: 16),
+                  if (!widget.register) ...[
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => context.push(AppRoutes.forgotPasswordPath),
+                        child: const Text('စကားဝှက် မေ့နေပါသလား။'),
+                      ),
+                    ),
+                  ] else
+                    const SizedBox(height: 16),
                   if (widget.register) ...[
                     TextFormField(
                       controller: auth.confirmPasswordController,
@@ -158,21 +168,21 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                       ),
                     ] else
                       _field(
-                      'ဆက်သွယ်ရန်ဖုန်း (ရှိပါက)',
-                      auth.contactPhoneController,
-                      keyboard: TextInputType.phone,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
-                      ],
-                      validator: (v) {
-                        if (v != null &&
-                            v.trim().isNotEmpty &&
-                            !RegExp(r'^\+?[0-9]{7,15}$').hasMatch(v.trim())) {
-                          return 'ဖုန်းနံပါတ်သည် အင်္ဂလိပ်ဂဏန်းများသာ ဖြစ်ရပါမည်။';
-                        }
-                        return null;
-                      },
-                    ),
+                        'ဆက်သွယ်ရန်ဖုန်း (ရှိပါက)',
+                        auth.contactPhoneController,
+                        keyboard: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                        ],
+                        validator: (v) {
+                          if (v != null &&
+                              v.trim().isNotEmpty &&
+                              !RegExp(r'^\+?[0-9]{7,15}$').hasMatch(v.trim())) {
+                            return 'ဖုန်းနံပါတ်သည် အင်္ဂလိပ်ဂဏန်းများသာ ဖြစ်ရပါမည်။';
+                          }
+                          return null;
+                        },
+                      ),
                   ],
                   Obx(
                     () => FilledButton(
@@ -221,17 +231,35 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
     ),
   );
 
-
   Future<void> _submit() async {
     if (!_form.currentState!.validate()) return;
     if (!widget.register) {
       await auth.login();
       return;
     }
+    final email = auth.emailController.text.trim();
     final success = _monk ? await auth.signupMonk() : await auth.signupUser();
     if (success && mounted) {
-      auth.clearControllers();
-      context.go('/login');
+      if (email.isNotEmpty && email.contains('@')) {
+        await auth.requestOtp(
+          destination: email,
+          channel: 'EMAIL',
+          purpose: 'VERIFY_EMAIL',
+        );
+        auth.clearControllers();
+        if (mounted) {
+          context.push(
+            AppRoutes.optPath,
+            extra: {
+              'destination': email,
+              'purpose': 'VERIFY_EMAIL',
+            },
+          );
+        }
+      } else {
+        auth.clearControllers();
+        context.go('/login');
+      }
     }
   }
 }

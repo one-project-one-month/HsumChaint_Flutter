@@ -9,9 +9,16 @@ import '../../../presentation/widgets/primary_button.dart';
 import '../../../utils/extensions/extensions.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
-  const OtpVerificationScreen({super.key, required this.phoneNumber});
+  const OtpVerificationScreen({
+    super.key,
+    required this.destination,
+    this.purpose = 'VERIFY_EMAIL',
+    this.channel = 'EMAIL',
+  });
 
-  final String phoneNumber;
+  final String destination;
+  final String purpose;
+  final String channel;
 
   @override
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
@@ -78,12 +85,26 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       Get.snackbar('Invalid OTP', 'Please enter the 6-digit verification code');
       return;
     }
-    // TODO: if api success, navigate to reset password screen Or Signup success page
-    _authController.verifyOtp(phone: widget.phoneNumber, otp: _otp).then((
-      success,
-    ) {
+
+    if (widget.purpose == 'RESET_PASSWORD') {
+      context.push(
+        AppRoutes.resetPasswordPath,
+        extra: {
+          'email': widget.destination,
+          'otp': _otp,
+        },
+      );
+      return;
+    }
+
+    _authController.verifyOtp(
+      destination: widget.destination,
+      channel: widget.channel,
+      purpose: widget.purpose,
+      otp: _otp,
+    ).then((success) {
       if (success && mounted) {
-        context.go(AppRoutes.homePath);
+        context.go('/login');
       }
     });
   }
@@ -102,7 +123,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     _startTimer();
 
-    _authController.resendOtp(widget.phoneNumber);
+    _authController.resendOtp(
+      destination: widget.destination,
+      channel: widget.channel,
+      purpose: widget.purpose,
+    );
   }
 
   @override
@@ -187,7 +212,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           26.h,
 
           const Text(
-            'OPT Verification',
+            'OTP Verification',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -198,7 +223,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           20.h,
 
           const Text(
-            'Enter the verification code we send.',
+            'Enter the verification code we sent.',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -218,10 +243,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ),
               children: [
                 const TextSpan(
-                  text: 'Please type the code from the SMS we send to ',
+                  text: 'Please type the 6-digit code sent to ',
                 ),
                 TextSpan(
-                  text: widget.phoneNumber,
+                  text: widget.destination,
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
                     color: _textColor,
@@ -254,7 +279,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           Column(
             children: [
               const Text(
-                'Didn’t received the code we send you?',
+                'Didn’t receive the code we sent you?',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: _subtleTextColor),
               ),
