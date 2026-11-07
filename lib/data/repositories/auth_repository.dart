@@ -7,6 +7,12 @@ import '../../core/errors/failures.dart';
 class AuthRepository {
   final AuthProvider _provider;
   AuthRepository(this._provider);
+
+  String _errorMessage(Object error) {
+    if (error is ApiFailure) return error.message;
+    return error.toString();
+  }
+
   Future<(Failure?, UserModel?)> login(String phone, String password) async {
     final api = Get.find<ApiService>();
     try {
@@ -32,7 +38,7 @@ class AuthRepository {
       );
     } catch (e) {
       api.clearSession();
-      return (ServerFailure(e.toString()), null);
+      return (ServerFailure(_errorMessage(e)), null);
     }
   }
 
@@ -53,7 +59,7 @@ class AuthRepository {
       );
       return (null, true);
     } catch (e) {
-      return (ServerFailure(e.toString()), false);
+      return (ServerFailure(_errorMessage(e)), false);
     }
   }
 
@@ -76,16 +82,101 @@ class AuthRepository {
       );
       return (null, true);
     } catch (e) {
-      return (ServerFailure(e.toString()), false);
+      return (ServerFailure(_errorMessage(e)), false);
     }
   }
 
-  // Legacy screens are no longer routed: the backend has no OTP endpoints.
-  Future<(Failure?, UserModel?)> verifyOtp({
-    required String phone,
+  Future<(Failure?, bool)> requestOtp({
+    required String destination,
+    String channel = 'EMAIL',
+    required String purpose,
+  }) async {
+    try {
+      await _provider.requestOtp(
+        destination: destination,
+        channel: channel,
+        purpose: purpose,
+      );
+      return (null, true);
+    } catch (e) {
+      return (ServerFailure(_errorMessage(e)), false);
+    }
+  }
+
+  Future<(Failure?, bool)> verifyOtp({
+    required String destination,
+    String channel = 'EMAIL',
+    required String purpose,
     required String otp,
-  }) async =>
-      (const ValidationFailure('OTP is not supported by the backend.'), null);
-  Future<(Failure?, bool)> resendOtp({required String phone}) async =>
-      (const ValidationFailure('OTP is not supported by the backend.'), false);
+  }) async {
+    try {
+      await _provider.verifyOtp(
+        destination: destination,
+        channel: channel,
+        purpose: purpose,
+        code: otp,
+      );
+      return (null, true);
+    } catch (e) {
+      return (ServerFailure(_errorMessage(e)), false);
+    }
+  }
+
+  Future<(Failure?, bool)> resendOtp({
+    required String destination,
+    String channel = 'EMAIL',
+    required String purpose,
+  }) => requestOtp(destination: destination, channel: channel, purpose: purpose);
+
+  Future<(Failure?, bool)> forgotPassword(String email) async {
+    try {
+      await _provider.forgotPassword(email);
+      return (null, true);
+    } catch (e) {
+      return (ServerFailure(_errorMessage(e)), false);
+    }
+  }
+
+  Future<(Failure?, bool)> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      await _provider.resetPassword(
+        email: email,
+        otp: otp,
+        newPassword: newPassword,
+      );
+      return (null, true);
+    } catch (e) {
+      return (ServerFailure(_errorMessage(e)), false);
+    }
+  }
+
+  Future<(Failure?, bool)> requestChangePasswordOtp() async {
+    try {
+      await _provider.requestChangePasswordOtp();
+      return (null, true);
+    } catch (e) {
+      return (ServerFailure(_errorMessage(e)), false);
+    }
+  }
+
+  Future<(Failure?, bool)> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String otp,
+  }) async {
+    try {
+      await _provider.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        otp: otp,
+      );
+      return (null, true);
+    } catch (e) {
+      return (ServerFailure(_errorMessage(e)), false);
+    }
+  }
 }
