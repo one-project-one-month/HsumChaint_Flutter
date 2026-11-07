@@ -303,23 +303,58 @@ class AuthController extends GetxController {
     );
   }
 
-  Future<bool> verifyOtp({required String phone, required String otp}) async {
-    if (otp.isEmpty || otp.length < 4) {
+  Future<bool> requestOtp({
+    required String destination,
+    String channel = 'EMAIL',
+    required String purpose,
+  }) async {
+    isOtpLoading.value = true;
+    final (failure, ok) = await _authRepository.requestOtp(
+      destination: destination,
+      channel: channel,
+      purpose: purpose,
+    );
+    isOtpLoading.value = false;
+
+    if (failure != null || !ok) {
+      DialogHelper.showErrorSnackbar(
+        title: 'OTP Request Failed',
+        message: failure?.message ?? 'Unable to send verification code.',
+      );
+      return false;
+    }
+
+    DialogHelper.showSuccessSnackbar(
+      title: 'OTP Sent',
+      message: 'Verification code has been sent to $destination.',
+    );
+    return true;
+  }
+
+  Future<bool> verifyOtp({
+    required String destination,
+    String channel = 'EMAIL',
+    required String purpose,
+    required String otp,
+  }) async {
+    if (otp.isEmpty || otp.length < 6) {
       DialogHelper.showErrorSnackbar(
         title: 'Invalid OTP',
-        message: 'Please enter the verification code.',
+        message: 'Please enter the 6-digit verification code.',
       );
       return false;
     }
 
     isOtpLoading.value = true;
-    final (failure, user) = await _authRepository.verifyOtp(
-      phone: phone,
+    final (failure, ok) = await _authRepository.verifyOtp(
+      destination: destination,
+      channel: channel,
+      purpose: purpose,
       otp: otp,
     );
     isOtpLoading.value = false;
 
-    if (failure != null || user == null) {
+    if (failure != null || !ok) {
       DialogHelper.showErrorSnackbar(
         title: 'Verification Failed',
         message: failure?.message ?? 'Please check the code and try again.',
@@ -327,18 +362,23 @@ class AuthController extends GetxController {
       return false;
     }
 
-    currentUser.value = user;
-    _apiService.setAuthToken(user.token);
     DialogHelper.showSuccessSnackbar(
       title: 'Verified',
-      message: 'Your phone number has been verified.',
+      message: 'Verification successful.',
     );
-    clearControllers();
     return true;
   }
 
-  Future<void> resendOtp(String phone) async {
-    final (failure, success) = await _authRepository.resendOtp(phone: phone);
+  Future<void> resendOtp({
+    required String destination,
+    String channel = 'EMAIL',
+    required String purpose,
+  }) async {
+    final (failure, success) = await _authRepository.resendOtp(
+      destination: destination,
+      channel: channel,
+      purpose: purpose,
+    );
 
     if (failure != null || !success) {
       DialogHelper.showErrorSnackbar(
@@ -351,5 +391,132 @@ class AuthController extends GetxController {
         message: 'A new verification code has been sent.',
       );
     }
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail.isEmpty || !cleanEmail.contains('@')) {
+      DialogHelper.showErrorSnackbar(
+        title: 'Invalid Email',
+        message: 'Please enter a valid email address.',
+      );
+      return false;
+    }
+
+    isLoading.value = true;
+    final (failure, ok) = await _authRepository.forgotPassword(cleanEmail);
+    isLoading.value = false;
+
+    if (failure != null || !ok) {
+      DialogHelper.showErrorSnackbar(
+        title: 'Request Failed',
+        message: failure?.message ?? 'Unable to send password reset code.',
+      );
+      return false;
+    }
+
+    DialogHelper.showSuccessSnackbar(
+      title: 'Code Sent',
+      message: 'Password reset code has been sent to $cleanEmail.',
+    );
+    return true;
+  }
+
+  Future<bool> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    if (newPassword.length < 6) {
+      DialogHelper.showErrorSnackbar(
+        title: 'Invalid Password',
+        message: 'Password must be at least 6 characters.',
+      );
+      return false;
+    }
+
+    isLoading.value = true;
+    final (failure, ok) = await _authRepository.resetPassword(
+      email: email.trim().toLowerCase(),
+      otp: otp.trim(),
+      newPassword: newPassword,
+    );
+    isLoading.value = false;
+
+    if (failure != null || !ok) {
+      DialogHelper.showErrorSnackbar(
+        title: 'Reset Failed',
+        message: failure?.message ?? 'Unable to reset password.',
+      );
+      return false;
+    }
+
+    DialogHelper.showSuccessSnackbar(
+      title: 'Success',
+      message: 'Password reset successful. Please log in.',
+    );
+    clearControllers();
+    return true;
+  }
+
+  Future<bool> requestChangePasswordOtp() async {
+    isOtpLoading.value = true;
+    final (failure, ok) = await _authRepository.requestChangePasswordOtp();
+    isOtpLoading.value = false;
+
+    if (failure != null || !ok) {
+      DialogHelper.showErrorSnackbar(
+        title: 'Request Failed',
+        message: failure?.message ?? 'Unable to send verification code.',
+      );
+      return false;
+    }
+
+    DialogHelper.showSuccessSnackbar(
+      title: 'OTP Sent',
+      message: 'Verification code has been sent to your email.',
+    );
+    return true;
+  }
+
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String otp,
+  }) async {
+    if (newPassword.length < 6) {
+      DialogHelper.showErrorSnackbar(
+        title: 'Invalid Password',
+        message: 'New password must be at least 6 characters.',
+      );
+      return false;
+    }
+
+    isLoading.value = true;
+    final (failure, ok) = await _authRepository.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+      otp: otp.trim(),
+    );
+    isLoading.value = false;
+
+    if (failure != null || !ok) {
+      DialogHelper.showErrorSnackbar(
+        title: 'Change Password Failed',
+        message: failure?.message ?? 'Unable to change password.',
+      );
+      return false;
+    }
+
+    DialogHelper.showSuccessSnackbar(
+      title: 'Success',
+      message: 'Password changed successfully. Please log in again.',
+    );
+    await _secureStorage.delete(key: sessionKey);
+    await _prefs?.remove(sessionKey);
+    _apiService.clearSession();
+    currentUser.value = null;
+    clearControllers();
+    return true;
   }
 }
