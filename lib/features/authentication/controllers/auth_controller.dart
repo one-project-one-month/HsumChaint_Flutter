@@ -288,6 +288,7 @@ class AuthController extends GetxController {
       description: 'အကောင့်မှ ထွက်ရန် သေချာပါသလား။',
       confirmText: 'ထွက်မည်',
       cancelText: 'မထွက်ပါ',
+      confirmTextColor: Colors.redAccent,
       onConfirm: () async {
         final refreshToken = currentUser.value?.refreshToken;
         final (failure, ok) =
