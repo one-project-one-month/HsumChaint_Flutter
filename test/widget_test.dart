@@ -689,6 +689,70 @@ void main() {
     },
   );
 
+  testWidgets(
+    'logout fails when network is offline and keeps session intact',
+    (tester) async {
+      const initialJson =
+          '{"id": 42, "name": "Donor", "phoneNumber": "09123", "roleId": 3, "accessToken": "token", "refreshToken": "refresh"}';
+      FlutterSecureStorage.setMockInitialValues({
+        AuthController.sessionKey: initialJson,
+      });
+      const secureStorage = FlutterSecureStorage();
+      Get.put<FlutterSecureStorage>(secureStorage);
+
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      Get.put<SharedPreferences>(prefs);
+
+      // Simulates network failure / 500 error on /api/v1/auth/logout
+      final api = service(FakeAdapter((r) {
+        if (r.path.endsWith('/logout')) {
+          return fail(500, 'Network disconnected');
+        }
+        return ok(true);
+      }));
+      Get.put<ApiService>(api);
+      final repo = AuthRepository(AuthProvider());
+      final controller = AuthController(
+        repo,
+        secureStorage: secureStorage,
+        initialSession: initialJson,
+      );
+      Get.put<AuthController>(controller);
+
+      final appRouter = AppRouter(authController: controller);
+      addTearDown(() {
+        appRouter.dispose();
+      });
+
+      await tester.pumpWidget(
+        GetMaterialApp.router(
+          routeInformationProvider: appRouter.router.routeInformationProvider,
+          routeInformationParser: appRouter.router.routeInformationParser,
+          routerDelegate: appRouter.router.routerDelegate,
+          backButtonDispatcher: appRouter.router.backButtonDispatcher,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.isAuthenticated, isTrue);
+
+      controller.logout();
+      await tester.pumpAndSettle();
+
+      expect(find.text('အကောင့်မှ ထွက်မည်'), findsOneWidget);
+      expect(find.text('ထွက်မည်'), findsOneWidget);
+
+      await tester.tap(find.text('ထွက်မည်'));
+      await tester.pumpAndSettle();
+
+      // Session remains intact because network/server failed
+      expect(controller.isAuthenticated, isTrue);
+      expect(controller.currentUser.value, isNotNull);
+      expect(await secureStorage.read(key: AuthController.sessionKey), isNotNull);
+    },
+  );
+
   testWidgets('LoadView renders ShimmerSkeletonList while loading', (tester) async {
     final completer = Completer<String>();
     await tester.pumpWidget(

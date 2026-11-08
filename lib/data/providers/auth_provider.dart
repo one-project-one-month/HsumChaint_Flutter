@@ -115,4 +115,9 @@ class AuthProvider {
       'otp': otp,
     },
   );
+
+  Future<Response<dynamic>> logout({String? refreshToken}) => _api.post(
+    '/api/v1/auth/logout',
+    data: {'refreshToken': refreshToken},
+  );
 }

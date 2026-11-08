@@ -179,4 +179,13 @@ class AuthRepository {
       return (ServerFailure(_errorMessage(e)), false);
     }
   }
+
+  Future<(Failure?, bool)> logout({String? refreshToken}) async {
+    try {
+      await _provider.logout(refreshToken: refreshToken);
+      return (null, true);
+    } catch (e) {
+      return (ServerFailure(_errorMessage(e)), false);
+    }
+  }
 }

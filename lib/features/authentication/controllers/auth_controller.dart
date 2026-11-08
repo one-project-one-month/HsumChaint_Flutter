@@ -289,6 +289,18 @@ class AuthController extends GetxController {
       confirmText: 'ထွက်မည်',
       cancelText: 'မထွက်ပါ',
       onConfirm: () async {
+        final refreshToken = currentUser.value?.refreshToken;
+        final (failure, ok) =
+            await _authRepository.logout(refreshToken: refreshToken);
+        if (failure != null || !ok) {
+          DialogHelper.showErrorSnackbar(
+            title: 'ထွက်၍ မရပါ',
+            message: failure?.message ??
+                'အင်တာနက်လိုင်း ချိတ်ဆက်၍ မရပါ။ လိုင်းကောင်းမှ ပြန်လည်ကြိုးစားပါ။',
+          );
+          return;
+        }
+
         await _secureStorage.delete(key: sessionKey);
         await _prefs?.remove(sessionKey);
         _apiService.clearSession();
