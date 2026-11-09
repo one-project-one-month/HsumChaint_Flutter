@@ -5,40 +5,41 @@ import '../services/api_service.dart';
 class AuthProvider {
   final ApiService _api = Get.find<ApiService>();
 
-  Future<Response<dynamic>> login(String phone, String password) => _api.post(
+  Future<Response<dynamic>> login(String identifier, String password) => _api.post(
     '/api/v1/auth/login',
-    data: {'phoneNumber': phone, 'password': password},
+    data: {'identifier': identifier, 'password': password},
   );
 
   Future<Response<dynamic>> signupUser({
-    required String phone,
+    String? phone,
     required String username,
     required String password,
-    String? email,
+    required String email,
     String? contactPhone,
   }) => _api.post(
     '/api/v1/auth/register',
     data: {
-      'phoneNumber': phone,
+      if (phone != null && phone.isNotEmpty) 'phoneNumber': phone,
       'name': username,
       'password': password,
       'roleId': 3,
       'email': email,
-      'contactPhoneNumber': contactPhone,
+      if (contactPhone != null && contactPhone.isNotEmpty)
+        'contactPhoneNumber': contactPhone,
     },
   );
 
   Future<Response<dynamic>> signupMonk({
-    required String phone,
+    String? phone,
     required String username,
     required String password,
     required String monasteryName,
     required String monasteryAddress,
-    String? email,
+    required String email,
   }) => _api.post(
     '/api/v1/auth/register',
     data: {
-      'phoneNumber': phone,
+      if (phone != null && phone.isNotEmpty) 'phoneNumber': phone,
       'name': username,
       'password': password,
       'roleId': 2,
@@ -114,5 +115,10 @@ class AuthProvider {
       'newPassword': newPassword,
       'otp': otp,
     },
+  );
+
+  Future<Response<dynamic>> logout({String? refreshToken}) => _api.post(
+    '/api/v1/auth/logout',
+    data: {'refreshToken': refreshToken},
   );
 }

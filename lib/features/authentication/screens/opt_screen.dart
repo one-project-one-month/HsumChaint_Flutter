@@ -82,7 +82,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   void _verifyOtp() {
     if (_otp.length < 6) {
-      Get.snackbar('Invalid OTP', 'Please enter the 6-digit verification code');
+      Get.snackbar('မမှန်ကန်ပါ', 'ဂဏန်း ၆ လုံးပါ အတည်ပြုကုဒ်ကို အပြည့်အစုံ ရိုက်ထည့်ပေးပါ');
       return;
     }
 
@@ -199,7 +199,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           8.h,
 
           AuthPageHeader(
-            title: 'OTP',
+            title: 'အတည်ပြုကုဒ်',
             onBack: () => context.pop(),
           ).slideIn(delay: 80.ms, begin: const Offset(0, -0.08), fadeBegin: 0),
 
@@ -212,7 +212,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           26.h,
 
           const Text(
-            'OTP Verification',
+            'အတည်ပြုကုဒ် စစ်ဆေးခြင်း',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -223,7 +223,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           20.h,
 
           const Text(
-            'Enter the verification code we sent.',
+            'ပေးပို့ထားသော အတည်ပြုကုဒ်ကို ရိုက်ထည့်ပါ',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -242,9 +242,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 color: _subtleTextColor,
               ),
               children: [
-                const TextSpan(
-                  text: 'Please type the 6-digit code sent to ',
-                ),
+                const TextSpan(text: ''),
                 TextSpan(
                   text: widget.destination,
                   style: const TextStyle(
@@ -252,7 +250,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     color: _textColor,
                   ),
                 ),
-                const TextSpan(text: '.'),
+                const TextSpan(
+                  text: ' သို့ ပေးပို့ထားသော ဂဏန်း ၆ လုံးပါ အတည်ပြုကုဒ်ကို ရိုက်ထည့်ပေးပါ။',
+                ),
               ],
             ),
           ).fadeIn(delay: 340.ms, duration: 600.ms),
@@ -268,7 +268,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
           Obx(
             () => PrimaryButton(
-              text: 'Verify',
+              text: 'အတည်ပြုမည်',
               isLoading: _authController.isOtpLoading.value,
               onPressed: _verifyOtp,
             ).fadeIn(delay: 520.ms, duration: 700.ms),
@@ -279,7 +279,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           Column(
             children: [
               const Text(
-                'Didn’t receive the code we sent you?',
+                'အတည်ပြုကုဒ် မရရှိသေးပါသလား။',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: _subtleTextColor),
               ),
@@ -288,8 +288,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 onTap: _resendOtp,
                 child: Text(
                   _secondsLeft > 0
-                      ? 'Resend in ${_secondsLeft}s.'
-                      : 'Resend now',
+                      ? 'စက္ကန့် $_secondsLeft အတွင်း ပြန်ပို့မည်'
+                      : 'ကုဒ် အသစ်ပြန်ပို့မည်',
                   style: TextStyle(
                     fontSize: 14,
                     color: _secondsLeft > 0 ? _timerColor : _brandColor,

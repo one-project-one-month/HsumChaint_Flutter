@@ -97,13 +97,13 @@ void main() {
       });
       Get.put(service(adapter));
       final repo = AuthRepository(AuthProvider());
-      final (failure, user) = await repo.login('09123', 'secret');
+      final (failure, user) = await repo.login('donor@example.com', 'secret');
       expect(failure, isNull);
       expect(user!.name, 'အလှူရှင်');
       expect(user.isDonor, isTrue);
       expect(user.can('Donation.Create'), isTrue);
       expect(adapter.requests.first.data, {
-        'phoneNumber': '09123',
+        'identifier': 'donor@example.com',
         'password': 'secret',
       });
     },
@@ -114,11 +114,13 @@ void main() {
     Get.put(service(adapter));
     final provider = AuthProvider();
     await provider.signupUser(
+      email: 'donor@example.com',
       phone: '09',
       username: 'Donor',
       password: 'secret',
     );
     await provider.signupMonk(
+      email: 'monk@example.com',
       phone: '08',
       username: 'Monk',
       password: 'secret',
@@ -130,7 +132,9 @@ void main() {
       everyElement('/api/v1/auth/register'),
     );
     expect(adapter.requests[0].data['roleId'], 3);
+    expect(adapter.requests[0].data['email'], 'donor@example.com');
     expect(adapter.requests[1].data['roleId'], 2);
+    expect(adapter.requests[1].data['email'], 'monk@example.com');
     expect(adapter.requests[1].data['monasteryName'], 'ကျောင်း');
     expect(adapter.requests[1].data.containsKey('monastery_name'), isFalse);
   });
@@ -140,7 +144,7 @@ void main() {
     Get.put(service(adapter));
     final (failure, user) = await AuthRepository(
       AuthProvider(),
-    ).login('09', 'secret');
+    ).login('admin@example.com', 'secret');
     expect(failure, isNotNull);
     expect(user, isNull);
     expect(adapter.requests, hasLength(1));
@@ -398,11 +402,12 @@ void main() {
       await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
       expect(find.text('ဝင်ရောက်ရန်'), findsOneWidget);
-      expect(find.text('ဖုန်းနံပါတ်'), findsOneWidget);
+      expect(find.text('အီးမေးလ်'), findsOneWidget);
       expect(find.textContaining('OTP'), findsNothing);
       await tester.tap(find.text('အကောင့်သစ်'));
       await tester.pumpAndSettle();
       expect(find.text('အလှူရှင်'), findsOneWidget);
+      expect(find.text('ဆက်သွယ်ရန် ဖုန်းနံပါတ် (ရှိပါက)'), findsOneWidget);
       await tester.tap(find.text('သံဃာတော်'));
       await tester.pumpAndSettle();
       expect(find.text('ကျောင်းတိုက်အမည်'), findsOneWidget);
@@ -686,6 +691,70 @@ void main() {
       expect(controller.isAuthenticated, isFalse);
       expect(controller.currentUser.value, isNull);
       expect(await secureStorage.read(key: AuthController.sessionKey), isNull);
+    },
+  );
+
+  testWidgets(
+    'logout fails when network is offline and keeps session intact',
+    (tester) async {
+      const initialJson =
+          '{"id": 42, "name": "Donor", "phoneNumber": "09123", "roleId": 3, "accessToken": "token", "refreshToken": "refresh"}';
+      FlutterSecureStorage.setMockInitialValues({
+        AuthController.sessionKey: initialJson,
+      });
+      const secureStorage = FlutterSecureStorage();
+      Get.put<FlutterSecureStorage>(secureStorage);
+
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      Get.put<SharedPreferences>(prefs);
+
+      // Simulates network failure / 500 error on /api/v1/auth/logout
+      final api = service(FakeAdapter((r) {
+        if (r.path.endsWith('/logout')) {
+          return fail(500, 'Network disconnected');
+        }
+        return ok(true);
+      }));
+      Get.put<ApiService>(api);
+      final repo = AuthRepository(AuthProvider());
+      final controller = AuthController(
+        repo,
+        secureStorage: secureStorage,
+        initialSession: initialJson,
+      );
+      Get.put<AuthController>(controller);
+
+      final appRouter = AppRouter(authController: controller);
+      addTearDown(() {
+        appRouter.dispose();
+      });
+
+      await tester.pumpWidget(
+        GetMaterialApp.router(
+          routeInformationProvider: appRouter.router.routeInformationProvider,
+          routeInformationParser: appRouter.router.routeInformationParser,
+          routerDelegate: appRouter.router.routerDelegate,
+          backButtonDispatcher: appRouter.router.backButtonDispatcher,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.isAuthenticated, isTrue);
+
+      controller.logout();
+      await tester.pumpAndSettle();
+
+      expect(find.text('အကောင့်မှ ထွက်မည်'), findsOneWidget);
+      expect(find.text('ထွက်မည်'), findsOneWidget);
+
+      await tester.tap(find.text('ထွက်မည်'));
+      await tester.pumpAndSettle();
+
+      // Session remains intact because network/server failed
+      expect(controller.isAuthenticated, isTrue);
+      expect(controller.currentUser.value, isNotNull);
+      expect(await secureStorage.read(key: AuthController.sessionKey), isNotNull);
     },
   );
 

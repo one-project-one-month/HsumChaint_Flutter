@@ -80,25 +80,54 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                     ),
                     const SizedBox(height: 20),
                     _field('အမည်', auth.usernameController, required: true),
+                    _field(
+                      'အီးမေးလ်',
+                      auth.emailController,
+                      required: true,
+                      keyboard: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'ကျေးဇူးပြု၍ အီးမေးလ် ဖြည့်စွက်ပေးပါ။';
+                        }
+                        if (!GetUtils.isEmail(v.trim())) {
+                          return 'မှန်ကန်သော အီးမေးလ်လိပ်စာ ဖြစ်ရပါမည်။';
+                        }
+                        return null;
+                      },
+                    ),
+                    _field(
+                      'ဆက်သွယ်ရန် ဖုန်းနံပါတ် (ရှိပါက)',
+                      auth.phoneController,
+                      keyboard: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
+                      ],
+                      validator: (v) {
+                        if (v != null &&
+                            v.trim().isNotEmpty &&
+                            !RegExp(r'^\+?[0-9]{7,15}$').hasMatch(v.trim())) {
+                          return 'ဖုန်းနံပါတ်သည် အင်္ဂလိပ်ဂဏန်းများသာ ဖြစ်ရပါမည်။';
+                        }
+                        return null;
+                      },
+                    ),
+                  ] else ...[
+                    _field(
+                      'အီးမေးလ်',
+                      auth.emailController,
+                      required: true,
+                      keyboard: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'ကျေးဇူးပြု၍ အီးမေးလ် ဖြည့်စွက်ပေးပါ။';
+                        }
+                        if (!GetUtils.isEmail(v.trim())) {
+                          return 'မှန်ကန်သော အီးမေးလ်လိပ်စာ ဖြစ်ရပါမည်။';
+                        }
+                        return null;
+                      },
+                    ),
                   ],
-                  _field(
-                    'ဖုန်းနံပါတ်',
-                    auth.phoneController,
-                    required: true,
-                    keyboard: TextInputType.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
-                    ],
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return 'ကျေးဇူးပြု၍ ဖြည့်စွက်ပေးပါ။';
-                      }
-                      if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(v.trim())) {
-                        return 'ဖုန်းနံပါတ်သည် အင်္ဂလိပ်ဂဏန်းများသာ ဖြစ်ရပါမည်။';
-                      }
-                      return null;
-                    },
-                  ),
 
                   TextFormField(
                     controller: auth.passwordController,
@@ -150,11 +179,6 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                           : null,
                     ),
                     const SizedBox(height: 16),
-                    _field(
-                      'အီးမေးလ် (ရှိပါက)',
-                      auth.emailController,
-                      keyboard: TextInputType.emailAddress,
-                    ),
                     if (_monk) ...[
                       _field(
                         'ကျောင်းတိုက်အမည်',
@@ -166,23 +190,7 @@ class _MobileAuthScreenState extends State<MobileAuthScreen> {
                         auth.monasteryAddressController,
                         required: true,
                       ),
-                    ] else
-                      _field(
-                        'ဆက်သွယ်ရန်ဖုန်း (ရှိပါက)',
-                        auth.contactPhoneController,
-                        keyboard: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
-                        ],
-                        validator: (v) {
-                          if (v != null &&
-                              v.trim().isNotEmpty &&
-                              !RegExp(r'^\+?[0-9]{7,15}$').hasMatch(v.trim())) {
-                            return 'ဖုန်းနံပါတ်သည် အင်္ဂလိပ်ဂဏန်းများသာ ဖြစ်ရပါမည်။';
-                          }
-                          return null;
-                        },
-                      ),
+                    ],
                   ],
                   Obx(
                     () => FilledButton(

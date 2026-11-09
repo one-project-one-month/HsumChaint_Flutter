@@ -63,7 +63,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       4.h,
 
                       const Text(
-                        'Swam Chaint',
+                        'ဆွမ်းချိုင့်',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,

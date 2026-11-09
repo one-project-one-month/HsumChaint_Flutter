@@ -97,7 +97,7 @@ class AuthLogo extends StatelessWidget {
         AppLogo(size: size),
         const SizedBox(height: 6),
         const Text(
-          'Swam Chaint',
+          'ဆွမ်းချိုင့်',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
