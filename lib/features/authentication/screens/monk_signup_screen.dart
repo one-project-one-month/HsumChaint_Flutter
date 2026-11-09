@@ -13,18 +13,24 @@ class MonkSignUpScreen extends GetView<AuthController> {
   const MonkSignUpScreen({super.key});
 
   Future<void> _submit(BuildContext context) async {
+    final email = controller.emailController.text.trim();
     final phone = controller.phoneController.text.trim();
     final password = controller.passwordController.text.trim();
     final confirmPassword = controller.confirmPasswordController.text.trim();
     final monasteryName = controller.monasteryNameController.text.trim();
     final monasteryAddress = controller.monasteryAddressController.text.trim();
 
-    if (phone.isEmpty) {
-      Get.snackbar('Required', 'Phone number is required');
+    if (email.isEmpty) {
+      Get.snackbar('Required', 'Email is required');
       return;
     }
 
-    if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
+    if (!GetUtils.isEmail(email)) {
+      Get.snackbar('Invalid', 'Please enter a valid email address');
+      return;
+    }
+
+    if (phone.isNotEmpty && !RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
       Get.snackbar(
         'Invalid',
         'Phone number must contain English digits only',
@@ -74,9 +80,18 @@ class MonkSignUpScreen extends GetView<AuthController> {
     if (!context.mounted) return;
 
     if (success) {
-      context.pushNamed(
-        AppRoutes.optName,
-        pathParameters: {'phone': phone},
+      await controller.requestOtp(
+        destination: email,
+        channel: 'EMAIL',
+        purpose: 'VERIFY_EMAIL',
+      );
+      if (!context.mounted) return;
+      context.push(
+        AppRoutes.optPath,
+        extra: {
+          'destination': email,
+          'purpose': 'VERIFY_EMAIL',
+        },
       );
     }
   }
@@ -113,8 +128,42 @@ class MonkSignUpScreen extends GetView<AuthController> {
 
           28.h,
 
-          const AuthFieldLabel('Phone Number', required: true).slideIn(
+          const AuthFieldLabel('Email Address', required: true).slideIn(
             delay: 260.ms,
+            begin: Offset(0, 0.10),
+            fadeBegin: 0,
+          ),
+
+          12.h,
+
+          CustomInputTextField(
+            controller: controller.emailController,
+            keyboardType: TextInputType.emailAddress,
+            textStyle: const TextStyle(
+              fontSize: 16,
+              color: Colors.black,
+            ),
+            hintText: 'Enter your email address',
+            hintStyle: const TextStyle(
+              fontSize: 16,
+              color: AuthColors.hint,
+              fontWeight: FontWeight.w400,
+            ),
+            fillColor: Colors.transparent,
+            borderColor: AuthColors.fieldBorder,
+            focusedBorderColor: AuthColors.fieldBorder,
+            borderRadius: 14,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 20,
+            ),
+            showClearButton: false,
+          ).fadeIn(delay: 300.ms, duration: 650.ms),
+
+          24.h,
+
+          const AuthFieldLabel('Phone Number', trailing: 'optional').slideIn(
+            delay: 290.ms,
             begin: Offset(0, 0.10),
             fadeBegin: 0,
           ),
@@ -146,7 +195,7 @@ class MonkSignUpScreen extends GetView<AuthController> {
               vertical: 20,
             ),
             showClearButton: false,
-          ).fadeIn(delay: 300.ms, duration: 650.ms),
+          ).fadeIn(delay: 320.ms, duration: 650.ms),
 
           24.h,
 
