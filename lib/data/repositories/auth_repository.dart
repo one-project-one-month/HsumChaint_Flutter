@@ -13,10 +13,10 @@ class AuthRepository {
     return error.toString();
   }
 
-  Future<(Failure?, UserModel?)> login(String phone, String password) async {
+  Future<(Failure?, UserModel?)> login(String identifier, String password) async {
     final api = Get.find<ApiService>();
     try {
-      final response = await _provider.login(phone, password);
+      final response = await _provider.login(identifier, password);
       final session = Map<String, dynamic>.from(response.data['data']);
       if (session['roleId'] != 2 && session['roleId'] != 3) {
         return (
@@ -43,10 +43,10 @@ class AuthRepository {
   }
 
   Future<(Failure?, bool)> signupUser({
-    required String phone,
+    String? phone,
     required String username,
     required String password,
-    String? email,
+    required String email,
     String? contactPhone,
   }) async {
     try {
@@ -64,12 +64,12 @@ class AuthRepository {
   }
 
   Future<(Failure?, bool)> signupMonk({
-    required String phone,
+    String? phone,
     required String username,
     required String password,
     required String monasteryName,
     required String monasteryAddress,
-    String? email,
+    required String email,
   }) async {
     try {
       await _provider.signupMonk(

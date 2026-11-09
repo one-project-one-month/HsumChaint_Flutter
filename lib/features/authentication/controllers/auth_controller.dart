@@ -173,13 +173,15 @@ class AuthController extends GetxController {
 
   Future<void> login() async {
     if (Get.isSnackbarOpen) Get.back();
-    final phone = phoneController.text.trim();
+    final identifier = emailController.text.trim().isNotEmpty
+        ? emailController.text.trim()
+        : phoneController.text.trim();
     final password = passwordController.text;
 
-    if (phone.isEmpty || password.isEmpty) {
+    if (identifier.isEmpty || password.isEmpty) {
       DialogHelper.showErrorSnackbar(
         title: 'Missing fields',
-        message: 'Phone number and password are required.',
+        message: 'Email and password are required.',
       );
       return;
     }
@@ -188,7 +190,7 @@ class AuthController extends GetxController {
     FocusManager.instance.primaryFocus?.unfocus();
     isLoading.value = true;
 
-    final (failure, user) = await _authRepository.login(phone, password);
+    final (failure, user) = await _authRepository.login(identifier, password);
 
     isLoading.value = false;
 
@@ -213,17 +215,17 @@ class AuthController extends GetxController {
     FocusManager.instance.primaryFocus?.unfocus();
     isLoading.value = true;
 
-    final phone = phoneController.text.trim();
+    final email = emailController.text.trim();
     final username = usernameController.text.trim();
     final password = passwordController.text;
-    final email = emailController.text.trim();
+    final phone = phoneController.text.trim();
     final contactPhone = contactPhoneController.text.trim();
 
     final (failure, ok) = await _authRepository.signupUser(
-      phone: phone,
+      phone: phone.isEmpty ? null : phone,
       username: username,
       password: password,
-      email: email.isEmpty ? null : email,
+      email: email,
       contactPhone: contactPhone.isEmpty ? null : contactPhone,
     );
 
@@ -239,7 +241,7 @@ class AuthController extends GetxController {
 
     DialogHelper.showSuccessSnackbar(
       title: 'အကောင့်ဖွင့်ပြီးပါပြီ',
-      message: 'ဖုန်းနံပါတ်နှင့် စကားဝှက်ဖြင့် ဝင်ရောက်ပါ။',
+      message: 'အီးမေးလ်နှင့် စကားဝှက်ဖြင့် ဝင်ရောက်ပါ။',
     );
     return true;
   }
@@ -249,20 +251,20 @@ class AuthController extends GetxController {
     FocusManager.instance.primaryFocus?.unfocus();
     isLoading.value = true;
 
-    final phone = phoneController.text.trim();
+    final email = emailController.text.trim();
     final username = usernameController.text.trim();
     final password = passwordController.text;
     final monasteryName = monasteryNameController.text.trim();
     final monasteryAddress = monasteryAddressController.text.trim();
-    final email = emailController.text.trim();
+    final phone = phoneController.text.trim();
 
     final (failure, ok) = await _authRepository.signupMonk(
-      phone: phone,
+      phone: phone.isEmpty ? null : phone,
       username: username,
       password: password,
       monasteryName: monasteryName,
       monasteryAddress: monasteryAddress,
-      email: email.isEmpty ? null : email,
+      email: email,
     );
 
     isLoading.value = false;
@@ -277,7 +279,7 @@ class AuthController extends GetxController {
 
     DialogHelper.showSuccessSnackbar(
       title: 'အကောင့်ဖွင့်ပြီးပါပြီ',
-      message: 'ဖုန်းနံပါတ်နှင့် စကားဝှက်ဖြင့် ဝင်ရောက်ပါ။',
+      message: 'အီးမေးလ်နှင့် စကားဝှက်ဖြင့် ဝင်ရောက်ပါ။',
     );
     return true;
   }
@@ -331,15 +333,15 @@ class AuthController extends GetxController {
 
     if (failure != null || !ok) {
       DialogHelper.showErrorSnackbar(
-        title: 'OTP Request Failed',
-        message: failure?.message ?? 'Unable to send verification code.',
+        title: 'ကုဒ် ပို့မရပါ',
+        message: failure?.message ?? 'အတည်ပြုကုဒ် ပေးပို့၍ မရသေးပါ။',
       );
       return false;
     }
 
     DialogHelper.showSuccessSnackbar(
-      title: 'OTP Sent',
-      message: 'Verification code has been sent to $destination.',
+      title: 'ကုဒ် ပို့ပြီးပါပြီ',
+      message: '$destination သို့ အတည်ပြုကုဒ် ပေးပို့ထားပြီး ဖြစ်ပါသည်။',
     );
     return true;
   }
@@ -352,8 +354,8 @@ class AuthController extends GetxController {
   }) async {
     if (otp.isEmpty || otp.length < 6) {
       DialogHelper.showErrorSnackbar(
-        title: 'Invalid OTP',
-        message: 'Please enter the 6-digit verification code.',
+        title: 'ကုဒ် မမှန်ကန်ပါ',
+        message: 'ကျေးဇူးပြု၍ ဂဏန်း ၆ လုံးပါ အတည်ပြုကုဒ်ကို ရိုက်ထည့်ပါ။',
       );
       return false;
     }
@@ -369,15 +371,15 @@ class AuthController extends GetxController {
 
     if (failure != null || !ok) {
       DialogHelper.showErrorSnackbar(
-        title: 'Verification Failed',
-        message: failure?.message ?? 'Please check the code and try again.',
+        title: 'အတည်ပြု မအောင်မြင်ပါ',
+        message: failure?.message ?? 'အတည်ပြုကုဒ် မှန်ကန်မှု မရှိပါ။ ပြန်လည် စစ်ဆေးပေးပါ။',
       );
       return false;
     }
 
     DialogHelper.showSuccessSnackbar(
-      title: 'Verified',
-      message: 'Verification successful.',
+      title: 'အတည်ပြုပြီးပါပြီ',
+      message: 'အီးမေးလ် အတည်ပြုခြင်း အောင်မြင်ပါသည်။',
     );
     return true;
   }
@@ -395,13 +397,13 @@ class AuthController extends GetxController {
 
     if (failure != null || !success) {
       DialogHelper.showErrorSnackbar(
-        title: 'Resend Failed',
-        message: failure?.message ?? 'Unable to resend OTP right now.',
+        title: 'ပြန်ပို့ မအောင်မြင်ပါ',
+        message: failure?.message ?? 'လောလောဆယ် ကုဒ်ပြန်ပို့၍ မရသေးပါ။',
       );
     } else {
       DialogHelper.showSuccessSnackbar(
-        title: 'OTP Sent',
-        message: 'A new verification code has been sent.',
+        title: 'ကုဒ် ပို့ပြီးပါပြီ',
+        message: 'အတည်ပြုကုဒ် အသစ်တစ်စောင် ပေးပို့ထားပြီး ဖြစ်ပါသည်။',
       );
     }
   }

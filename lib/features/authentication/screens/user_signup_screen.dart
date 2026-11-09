@@ -13,17 +13,23 @@ class UserSignUpScreen extends GetView<AuthController> {
   const UserSignUpScreen({super.key});
 
   Future<void> _submit(BuildContext context) async {
+    final email = controller.emailController.text.trim();
     final phone = controller.phoneController.text.trim();
     final username = controller.usernameController.text.trim();
     final password = controller.passwordController.text.trim();
     final confirmPassword = controller.confirmPasswordController.text.trim();
 
-    if (phone.isEmpty) {
-      Get.snackbar('Required', 'Phone number is required');
+    if (email.isEmpty) {
+      Get.snackbar('Required', 'Email is required');
       return;
     }
 
-    if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
+    if (!GetUtils.isEmail(email)) {
+      Get.snackbar('Invalid', 'Please enter a valid email address');
+      return;
+    }
+
+    if (phone.isNotEmpty && !RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
       Get.snackbar(
         'Invalid',
         'Phone number must contain English digits only',
@@ -78,9 +84,18 @@ class UserSignUpScreen extends GetView<AuthController> {
     if (!context.mounted) return;
 
     if (success) {
-      context.pushNamed(
-        AppRoutes.optName,
-        pathParameters: {'phone': phone},
+      await controller.requestOtp(
+        destination: email,
+        channel: 'EMAIL',
+        purpose: 'VERIFY_EMAIL',
+      );
+      if (!context.mounted) return;
+      context.push(
+        AppRoutes.optPath,
+        extra: {
+          'destination': email,
+          'purpose': 'VERIFY_EMAIL',
+        },
       );
     }
   }
@@ -117,7 +132,7 @@ class UserSignUpScreen extends GetView<AuthController> {
 
           20.h,
 
-          const AuthFieldLabel('Phone Number', required: true).slideIn(
+          const AuthFieldLabel('Phone Number', trailing: 'optional').slideIn(
             delay: 260.ms,
             begin: Offset(0, 0.10),
             fadeBegin: 0,
@@ -285,7 +300,7 @@ class UserSignUpScreen extends GetView<AuthController> {
 
           18.h,
 
-          const AuthFieldLabel('Email Address', trailing: 'optional').slideIn(
+          const AuthFieldLabel('Email Address', required: true).slideIn(
             delay: 560.ms,
             begin: Offset(0, 0.10),
             fadeBegin: 0,

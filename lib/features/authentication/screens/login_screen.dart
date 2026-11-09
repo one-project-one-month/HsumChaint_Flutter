@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hsum_chaint/features/authentication/widgets/popup_widget.dart';
@@ -41,7 +40,7 @@ class LoginScreen extends GetView<AuthController> {
             28.h,
 
             const Text(
-              'Phone Number',
+              'Email',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
@@ -56,13 +55,10 @@ class LoginScreen extends GetView<AuthController> {
             12.h,
 
             CustomInputTextField(
-              controller: controller.phoneController,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
-              ],
+              controller: controller.emailController,
+              keyboardType: TextInputType.emailAddress,
               textStyle: const TextStyle(fontSize: 16, color: Colors.black),
-              hintText: 'Enter your phone number',
+              hintText: 'Enter your email',
               hintStyle: const TextStyle(
                 fontSize: 16,
                 color: _hintColor,
@@ -158,18 +154,18 @@ class LoginScreen extends GetView<AuthController> {
                 text: 'Login',
                 isLoading: controller.isLoading.value,
                 onPressed: () {
-                  final phone = controller.phoneController.text.trim();
+                  final email = controller.emailController.text.trim();
                   final password = controller.passwordController.text.trim();
 
-                  if (phone.isEmpty) {
-                    Get.snackbar('Required', 'Phone number is required');
+                  if (email.isEmpty) {
+                    Get.snackbar('Required', 'Email is required');
                     return;
                   }
 
-                  if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(phone)) {
+                  if (!GetUtils.isEmail(email)) {
                     Get.snackbar(
                       'Invalid',
-                      'Phone number must contain English digits only',
+                      'Please enter a valid email address',
                     );
                     return;
                   }
