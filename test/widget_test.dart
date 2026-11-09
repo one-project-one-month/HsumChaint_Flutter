@@ -97,13 +97,13 @@ void main() {
       });
       Get.put(service(adapter));
       final repo = AuthRepository(AuthProvider());
-      final (failure, user) = await repo.login('09123', 'secret');
+      final (failure, user) = await repo.login('donor@example.com', 'secret');
       expect(failure, isNull);
       expect(user!.name, 'အလှူရှင်');
       expect(user.isDonor, isTrue);
       expect(user.can('Donation.Create'), isTrue);
       expect(adapter.requests.first.data, {
-        'phoneNumber': '09123',
+        'identifier': 'donor@example.com',
         'password': 'secret',
       });
     },
@@ -114,11 +114,13 @@ void main() {
     Get.put(service(adapter));
     final provider = AuthProvider();
     await provider.signupUser(
+      email: 'donor@example.com',
       phone: '09',
       username: 'Donor',
       password: 'secret',
     );
     await provider.signupMonk(
+      email: 'monk@example.com',
       phone: '08',
       username: 'Monk',
       password: 'secret',
@@ -130,7 +132,9 @@ void main() {
       everyElement('/api/v1/auth/register'),
     );
     expect(adapter.requests[0].data['roleId'], 3);
+    expect(adapter.requests[0].data['email'], 'donor@example.com');
     expect(adapter.requests[1].data['roleId'], 2);
+    expect(adapter.requests[1].data['email'], 'monk@example.com');
     expect(adapter.requests[1].data['monasteryName'], 'ကျောင်း');
     expect(adapter.requests[1].data.containsKey('monastery_name'), isFalse);
   });
@@ -140,7 +144,7 @@ void main() {
     Get.put(service(adapter));
     final (failure, user) = await AuthRepository(
       AuthProvider(),
-    ).login('09', 'secret');
+    ).login('admin@example.com', 'secret');
     expect(failure, isNotNull);
     expect(user, isNull);
     expect(adapter.requests, hasLength(1));
@@ -398,11 +402,12 @@ void main() {
       await tester.pumpWidget(const MyApp());
       await tester.pumpAndSettle();
       expect(find.text('ဝင်ရောက်ရန်'), findsOneWidget);
-      expect(find.text('ဖုန်းနံပါတ်'), findsOneWidget);
+      expect(find.text('အီးမေးလ်'), findsOneWidget);
       expect(find.textContaining('OTP'), findsNothing);
       await tester.tap(find.text('အကောင့်သစ်'));
       await tester.pumpAndSettle();
       expect(find.text('အလှူရှင်'), findsOneWidget);
+      expect(find.text('ဆက်သွယ်ရန် ဖုန်းနံပါတ် (ရှိပါက)'), findsOneWidget);
       await tester.tap(find.text('သံဃာတော်'));
       await tester.pumpAndSettle();
       expect(find.text('ကျောင်းတိုက်အမည်'), findsOneWidget);
